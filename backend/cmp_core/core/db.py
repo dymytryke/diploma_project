@@ -1,19 +1,25 @@
-from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+# cmp_core/core/db.py
+
+from typing import AsyncGenerator
+
+from cmp_core.core.config import settings
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-# 1. Підвантажуємо .env.dev у середовище
-load_dotenv(".env", override=True)
-
-
-class Settings(BaseSettings):
-    database_url: str  # буде взято з os.environ після load_dotenv()
-
-
-settings = Settings()  # завантажиться DATABASE_URL
-
-# 2. Ініціалізація SQLAlchemy
+# 1) Створюємо движок
 engine: AsyncEngine = create_async_engine(
-    settings.database_url, echo=False, future=True
+    settings.database_url,
+    echo=False,
+    future=True,
 )
-AsyncSession = async_sessionmaker(engine, expire_on_commit=False)
+
+# 2) Фабрика сесій
+AsyncSession = async_sessionmaker(
+    engine,
+    expire_on_commit=False,
+)
+
+
+# 3) Залежність для FastAPI
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSession() as session:
+        yield session
