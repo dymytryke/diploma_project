@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "cmp-core"
+version = "0.1.0"
+description = ""
+authors = ["Dmytro Overchuk <dymytryke@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.12"
+uvicorn = {extras = ["standard"], version = "^0.34.2"}
+pulumi = "^3.170.0"
+pulumi-aws = "^6.80.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.10"
+black = "^25.1.0"
+isort = "^6.0.1"
+pre-commit = "^4.2.0"
+pytest = "^8.3.5"
+pytest-asyncio = "^0.26.0"
+mypy = "^1.15.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
