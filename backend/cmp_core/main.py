@@ -1,6 +1,8 @@
 import asyncio
 
 from cmp_core.api.v1.auth import router as auth_router
+from cmp_core.api.v1.ec2 import router as ec2_router
+from cmp_core.api.v1.members import router as members_router
 from cmp_core.api.v1.projects import router as projects_router
 from cmp_core.api.v1.users import router as users_router
 from cmp_core.core.config import settings
@@ -13,6 +15,9 @@ from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
+
+app.include_router(ec2_router)
+app.include_router(members_router)
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(users_router)

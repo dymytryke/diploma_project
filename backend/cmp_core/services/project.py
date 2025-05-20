@@ -12,10 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 async def list_projects(db: AsyncSession, user_id: UUID) -> List[Project]:
     # projects you own or are a member of
-    stmt = (
-        select(Project)
-        .join(ProjectMember, Project.id == ProjectMember.project_id)
-        .where(ProjectMember.user_id == user_id)
+    stmt = select(Project).where(
+        (Project.owner_id == user_id)
+        | (
+            Project.id.in_(
+                select(ProjectMember.project_id).where(ProjectMember.user_id == user_id)
+            )
+        )
     )
     result = await db.execute(stmt)
     return result.scalars().all()
