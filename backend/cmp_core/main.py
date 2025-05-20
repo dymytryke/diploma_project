@@ -1,5 +1,6 @@
 import asyncio
 
+from cmp_core.api.v1.audit import router as audit_router
 from cmp_core.api.v1.auth import router as auth_router
 from cmp_core.api.v1.ec2 import router as ec2_router
 from cmp_core.api.v1.members import router as members_router
@@ -15,11 +16,13 @@ from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
+
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(projects_router)
 app.include_router(members_router)
 app.include_router(ec2_router)
+app.include_router(audit_router)
 
 
 @app.on_event("startup")
