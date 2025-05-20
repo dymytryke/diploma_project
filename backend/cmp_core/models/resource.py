@@ -24,8 +24,10 @@ class ResourceState(str, enum.Enum):
     creating = "creating"
     running = "running"
     stopped = "stopped"
+    terminating = "terminating"
     terminated = "terminated"
     error = "error"
+    pending = "pending"
 
 
 class Resource(IdMixin, TimestampMixin, Base):

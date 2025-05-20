@@ -1,13 +1,62 @@
 # cmp_core/services/ec2.py
 
+import uuid
+
 from cmp_core.lib.pulumi_ec2 import destroy_instance, up_instance
 from cmp_core.models.audit import AuditEvent
-from cmp_core.models.resource import Provider, Resource, ResourceType
+from cmp_core.models.resource import Provider, Resource, ResourceState, ResourceType
 from cmp_core.schemas.ec2 import Ec2Create, Ec2Out, Ec2Update
+from cmp_core.tasks.ec2 import create_ec2_task, delete_ec2_task
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+async def create_ec2_nonblocking(
+    db: AsyncSession,
+    project_id: str,
+    dto: Ec2Create,
+    user_id: str,
+) -> Ec2Out:
+    """
+    1) insert a placeholder Resource (state=pending)
+    2) schedule the Celery task to actually provision it
+    3) return an Ec2Out with status="pending"
+    """
+    resource_id = uuid.uuid4()
+    placeholder = Resource(
+        id=resource_id,
+        project_id=project_id,
+        provider=Provider.aws,
+        resource_type=ResourceType.vm,
+        name=dto.name,
+        region=dto.region,
+        state="pending",
+        meta={},
+    )
+    db.add(placeholder)
+    await db.commit()
+
+    # fire‐and‐forget
+    create_ec2_task.delay(
+        str(resource_id),
+        project_id,
+        dto.dict(),
+        user_id,
+    )
+
+    # return a shape matching your Ec2Out schema
+    return Ec2Out(
+        aws_id="",  # still unknown
+        name=placeholder.name,
+        region=placeholder.region,
+        instance_type=dto.instance_type,
+        public_ip="",
+        ami="",
+        launch_time="",
+        status="pending",
+    )
 
 
 async def create_ec2(
@@ -192,3 +241,25 @@ async def delete_ec2(db: AsyncSession, project_id: str, name: str, user_id: str)
     )
     db.add(evt)
     await db.commit()
+
+
+async def delete_ec2_nonblocking(
+    db: AsyncSession, project_id: str, name: str, user_id: str
+):
+    # find the resource
+    res = await db.scalar(
+        select(Resource).where(
+            Resource.project_id == project_id,
+            Resource.name == name,
+        )
+    )
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # mark deleting
+    res.state = ResourceState.terminating
+    db.add(res)
+    await db.commit()
+
+    # dispatch destroy
+    delete_ec2_task.delay(str(res.id), user_id, project_id)

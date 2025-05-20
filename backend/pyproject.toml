@@ -17,6 +17,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-jose = "^3.4.0"
 pydantic = {extras = ["email"], version = "^2.11.4"}
 python-multipart = "^0.0.20"
+kombu = "^5.5.3"
 
 
 [tool.poetry.group.dev.dependencies]
