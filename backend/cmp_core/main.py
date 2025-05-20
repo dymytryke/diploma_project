@@ -15,12 +15,11 @@ from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
-
-app.include_router(ec2_router)
-app.include_router(members_router)
 app.include_router(auth_router)
-app.include_router(projects_router)
 app.include_router(users_router)
+app.include_router(projects_router)
+app.include_router(members_router)
+app.include_router(ec2_router)
 
 
 @app.on_event("startup")
