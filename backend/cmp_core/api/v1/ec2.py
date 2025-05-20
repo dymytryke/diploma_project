@@ -11,6 +11,8 @@ from cmp_core.services.ec2 import (
     delete_ec2_nonblocking,
     get_ec2,
     list_ec2,
+    start_ec2_nonblocking,
+    stop_ec2_nonblocking,
     update_ec2_nonblocking,
 )
 from fastapi import APIRouter, Body, Depends, Path, status
@@ -98,3 +100,31 @@ async def api_delete_ec2(
     await delete_ec2_nonblocking(db, project_id, name, str(user.id))
     # 202 Accepted → client can poll for final 'terminated' state
     return None
+
+
+@router.post(
+    "/{project_id}/{name}/start",
+    response_model=Ec2Out,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def api_start_ec2(
+    project_id: str = Path(..., description="Project ID"),
+    name: str = Path(..., description="EC2 name"),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_project_member(RoleName.devops)),
+):
+    return await start_ec2_nonblocking(db, project_id, name, str(user.id))
+
+
+@router.post(
+    "/{project_id}/{name}/stop",
+    response_model=Ec2Out,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def api_stop_ec2(
+    project_id: str = Path(..., description="Project ID"),
+    name: str = Path(..., description="EC2 name"),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_project_member(RoleName.devops)),
+):
+    return await stop_ec2_nonblocking(db, project_id, name, str(user.id))

@@ -130,3 +130,63 @@ def delete_ec2_task(resource_id: str, user_id: str, project_id: str):
         db.commit()
     finally:
         db.close()
+
+
+@celery_app.task(name="cmp_core.tasks.start_ec2")
+def start_ec2_task(resource_id: str, user_id: str):
+    db = SessionLocal()
+    try:
+        # 1) load
+        res: Resource = db.query(Resource).filter_by(id=resource_id).one()
+
+        # 2) call AWS
+        client = boto3.client("ec2", region_name=res.region)
+        client.start_instances(InstanceIds=[res.meta["aws_id"]])
+        waiter = client.get_waiter("instance_running")
+        waiter.wait(InstanceIds=[res.meta["aws_id"]])
+
+        # 3) persist new state
+        res.state = ResourceState.running
+        db.add(res)
+
+        # 4) audit
+        evt = AuditEvent(
+            user_id=user_id,
+            project_id=res.project_id,
+            action="start_ec2",
+            object_type="ec2",
+            object_id=str(res.id),
+            details={},
+        )
+        db.add(evt)
+        db.commit()
+    finally:
+        db.close()
+
+
+@celery_app.task(name="cmp_core.tasks.stop_ec2")
+def stop_ec2_task(resource_id: str, user_id: str):
+    db = SessionLocal()
+    try:
+        res: Resource = db.query(Resource).filter_by(id=resource_id).one()
+
+        client = boto3.client("ec2", region_name=res.region)
+        client.stop_instances(InstanceIds=[res.meta["aws_id"]])
+        waiter = client.get_waiter("instance_stopped")
+        waiter.wait(InstanceIds=[res.meta["aws_id"]])
+
+        res.state = ResourceState.stopped
+        db.add(res)
+
+        evt = AuditEvent(
+            user_id=user_id,
+            project_id=res.project_id,
+            action="stop_ec2",
+            object_type="ec2",
+            object_id=str(res.id),
+            details={},
+        )
+        db.add(evt)
+        db.commit()
+    finally:
+        db.close()
