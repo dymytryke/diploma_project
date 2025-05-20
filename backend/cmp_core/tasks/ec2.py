@@ -60,6 +60,45 @@ def create_ec2_task(resource_id: str, project_id: str, cfg: dict, user_id: str):
     return outputs
 
 
+@celery_app.task(name="cmp_core.tasks.update_ec2")
+def update_ec2_task(resource_id: str, project_id: str, new_type: str, user_id: str):
+    db = SessionLocal()
+    try:
+        res: Resource = db.query(Resource).get(resource_id)
+        # build the Pulumi config from the existing row + new type
+        cfg = {
+            "name": res.name,
+            "region": res.region,
+            "ami": res.meta["ami"],
+            "instance_type": new_type,
+        }
+        outputs = up_instance(project_id, cfg)
+
+        # write back real status & new metadata
+        res.state = outputs["status"]
+        res.meta = {
+            **res.meta,
+            "instance_type": outputs["instance_type"],
+            "public_ip": outputs["public_ip"],
+            "aws_id": outputs["aws_id"],
+        }
+        db.add(res)
+
+        # audit it
+        evt = AuditEvent(
+            user_id=user_id,
+            project_id=project_id,
+            action="update_ec2",
+            object_type="ec2",
+            object_id=str(res.id),
+            details={"new_instance_type": new_type},
+        )
+        db.add(evt)
+        db.commit()
+    finally:
+        db.close()
+
+
 @celery_app.task(name="cmp_core.tasks.delete_ec2")
 def delete_ec2_task(resource_id: str, user_id: str, project_id: str):
     """

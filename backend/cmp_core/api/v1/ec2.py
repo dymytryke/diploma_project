@@ -11,7 +11,7 @@ from cmp_core.services.ec2 import (
     delete_ec2_nonblocking,
     get_ec2,
     list_ec2,
-    update_ec2,
+    update_ec2_nonblocking,
 )
 from fastapi import APIRouter, Body, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,18 +70,16 @@ async def api_get_ec2(
 @router.patch(
     "/{project_id}/{name}",
     response_model=Ec2Out,
+    status_code=status.HTTP_202_ACCEPTED,
 )
-async def api_update_ec2(
-    project_id: str = Path(..., description="ID проєкту"),
-    name: str = Path(..., description="Name EC2 інстансу"),
+async def api_update_ec2_nonblocking(
+    project_id: str = Path(..., description="Проєкт ID"),
+    name: str = Path(..., description="EC2 name"),
     dto: Ec2Update = Depends(),
     db: AsyncSession = Depends(get_db),
     user=Depends(require_project_member(RoleName.devops)),
 ):
-    """
-    Змінити тип EC2 (resize). Мінімальна роль DevOps.
-    """
-    return await update_ec2(db, project_id, dto, name, user.id)
+    return await update_ec2_nonblocking(db, project_id, dto, name, str(user.id))
 
 
 @router.delete(

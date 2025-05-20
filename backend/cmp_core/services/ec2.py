@@ -6,7 +6,7 @@ from cmp_core.lib.pulumi_ec2 import destroy_instance, up_instance
 from cmp_core.models.audit import AuditEvent
 from cmp_core.models.resource import Provider, Resource, ResourceState, ResourceType
 from cmp_core.schemas.ec2 import Ec2Create, Ec2Out, Ec2Update
-from cmp_core.tasks.ec2 import create_ec2_task, delete_ec2_task
+from cmp_core.tasks.ec2 import create_ec2_task, delete_ec2_task, update_ec2_task
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -216,6 +216,52 @@ async def update_ec2(
     await db.commit()
 
     return await get_ec2(db, project_id, name)
+
+
+async def update_ec2_nonblocking(
+    db: AsyncSession,
+    project_id: str,
+    dto: Ec2Update,
+    name: str,
+    user_id: str,
+) -> Ec2Out:
+    # 1) load the Resource
+    q = await db.execute(
+        select(Resource).where(
+            Resource.project_id == project_id,
+            Resource.name == name,
+            Resource.provider == Provider.aws,
+            Resource.resource_type == ResourceType.vm,
+        )
+    )
+    res = q.scalar_one_or_none()
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # 2) mark it “pending” again and persist
+    res.state = ResourceState.pending
+    db.add(res)
+    await db.commit()
+
+    # 3) fire the background Celery task
+    update_ec2_task.delay(
+        str(res.id),
+        project_id,
+        dto.instance_type,
+        user_id,
+    )
+
+    # 4) return the placeholder (202)
+    return Ec2Out(
+        aws_id=res.meta.get("aws_id", ""),
+        name=res.name,
+        region=res.region,
+        instance_type=dto.instance_type,
+        public_ip=res.meta.get("public_ip", ""),
+        ami=res.meta.get("ami", ""),
+        launch_time=res.meta.get("launch_time", ""),
+        status="pending",
+    )
 
 
 async def delete_ec2(db: AsyncSession, project_id: str, name: str, user_id: str):
