@@ -2,6 +2,7 @@
 
 import uuid
 
+from cmp_core.lib.grafana import make_dashboard_url
 from cmp_core.lib.pulumi_ec2 import destroy_instance, up_instance
 from cmp_core.models.audit import AuditEvent
 from cmp_core.models.resource import Provider, Resource, ResourceState, ResourceType
@@ -62,6 +63,7 @@ async def create_ec2_nonblocking(
         ami="",
         launch_time="",
         status="pending",
+        dashboard_url="",
     )
 
 
@@ -137,6 +139,12 @@ async def create_ec2(
         ami=res.meta["ami"],
         launch_time=res.meta.get("launch_time", ""),  # or drop if unused
         status=res.state,
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta["aws_id"],
+        ),
     )
 
 
@@ -151,16 +159,22 @@ async def list_ec2(db: AsyncSession, project_id: str) -> list[Ec2Out]:
     items = q.scalars().all()
     return [
         Ec2Out(
-            aws_id=i.meta["aws_id"],
-            name=i.name,
-            region=i.region,
-            instance_type=i.meta["instance_type"],
-            public_ip=i.meta["public_ip"],
-            ami=i.meta["ami"],
-            launch_time=i.meta.get("launch_time", ""),
-            status=i.state,
+            aws_id=res.meta["aws_id"],
+            name=res.name,
+            region=res.region,
+            instance_type=res.meta["instance_type"],
+            public_ip=res.meta["public_ip"],
+            ami=res.meta["ami"],
+            launch_time=res.meta.get("launch_time", ""),
+            status=res.state,
+            dashboard_url=make_dashboard_url(
+                provider=res.provider.value,
+                resource_type=res.resource_type.value,
+                region=res.region,
+                instance_id=res.meta["aws_id"],
+            ),
         )
-        for i in items
+        for res in items
     ]
 
 
@@ -173,18 +187,24 @@ async def get_ec2(db: AsyncSession, project_id: str, name: str) -> Ec2Out:
             Resource.name == name,
         )
     )
-    i = q.scalar_one_or_none()
-    if not i:
+    res = q.scalar_one_or_none()
+    if not res:
         raise ValueError("Not found")
     return Ec2Out(
-        aws_id=i.meta["aws_id"],
-        name=i.name,
-        region=i.region,
-        instance_type=i.meta["instance_type"],
-        public_ip=i.meta["public_ip"],
-        ami=i.meta["ami"],
-        launch_time=i.meta["launch_time"],
-        status=i.state,
+        aws_id=res.meta["aws_id"],
+        name=res.name,
+        region=res.region,
+        instance_type=res.meta["instance_type"],
+        public_ip=res.meta["public_ip"],
+        ami=res.meta["ami"],
+        launch_time=res.meta["launch_time"],
+        status=res.state,
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta["aws_id"],
+        ),
     )
 
 
@@ -267,6 +287,12 @@ async def update_ec2_nonblocking(
         ami=res.meta.get("ami", ""),
         launch_time=res.meta.get("launch_time", ""),
         status="pending",
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta["aws_id"],
+        ),
     )
 
 
@@ -354,6 +380,12 @@ async def start_ec2_nonblocking(
         ami=res.meta.get("ami", ""),
         launch_time=res.meta.get("launch_time", ""),
         status="pending",
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta["aws_id"],
+        ),
     )
 
 
@@ -390,4 +422,10 @@ async def stop_ec2_nonblocking(
         ami=res.meta.get("ami", ""),
         launch_time=res.meta.get("launch_time", ""),
         status="pending",
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta["aws_id"],
+        ),
     )

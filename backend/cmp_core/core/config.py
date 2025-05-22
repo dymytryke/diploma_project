@@ -1,12 +1,13 @@
+from typing import Mapping
+
 from dotenv import load_dotenv
 from pydantic import ConfigDict, Field
 from pydantic_settings import BaseSettings
 
-load_dotenv(".env", override=True)
+load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
-    # your DB + JWT
     database_url: str = Field(..., env="DATABASE_URL")
     secret_key: str = Field(..., env="SECRET_KEY")
     algorithm: str = "HS256"
@@ -26,6 +27,12 @@ class Settings(BaseSettings):
     # initial admin
     initial_admin_email: str | None = Field(None, env="INITIAL_ADMIN_EMAIL")
     initial_admin_password: str | None = Field(None, env="INITIAL_ADMIN_PASSWORD")
+
+    # Grafana
+    grafana_base_url: str = Field(..., env="GRAFANA_BASE_URL")
+    grafana_org_id: int = Field(1, env="GRAFANA_ORG_ID")
+    grafana_dashboard_uids: Mapping[str, str] = Field(..., env="GRAFANA_DASHBOARD_UIDS")
+    grafana_kiosk: bool = Field(True, env="GRAFANA_KIOSK")
 
     model_config = ConfigDict(
         env_file=".env",

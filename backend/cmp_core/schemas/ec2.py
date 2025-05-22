@@ -22,6 +22,7 @@ class Ec2Out(BaseModel):
     ami: str
     launch_time: str
     status: str
+    dashboard_url: str | None = None
 
     class Config:
         from_attributes = True
