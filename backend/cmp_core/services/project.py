@@ -5,6 +5,7 @@ from cmp_core.models.project import Project
 from cmp_core.models.project_member import ProjectMember
 from cmp_core.models.resource import Resource
 from cmp_core.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
+from cmp_core.tasks.pulumi import destroy_project_task
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -85,4 +86,7 @@ async def update_project(
 async def delete_project(db: AsyncSession, project_id: UUID, user_id: UUID):
     proj = await get_project_or_404(db, project_id, user_id)
     await db.delete(proj)
+
+    # asynchronously destroy all infra for that project
+    destroy_project_task.delay(str(project_id))
     await db.commit()

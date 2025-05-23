@@ -10,7 +10,6 @@ from cmp_core.services.project import (
     list_projects_with_count,
     update_project,
 )
-from cmp_core.tasks.pulumi import destroy_project_task
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,8 +62,4 @@ async def remove_project(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # 1) delete the Project row
     await delete_project(db, project_id, user.id)
-
-    # 2) asynchronously destroy all infra for that project
-    destroy_project_task.delay(str(project_id))
