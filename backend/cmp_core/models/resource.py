@@ -1,6 +1,8 @@
 import enum
 
 from sqlalchemy import JSON, Column, Enum, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.mutable import MutableDict
 
 from .base import Base
 from .mixins import IdMixin, TimestampMixin
@@ -40,7 +42,16 @@ class Resource(IdMixin, TimestampMixin, Base):
     region = Column(String(32), nullable=False)
     state = Column(Enum(ResourceState), nullable=False, default=ResourceState.creating)
     cost_daily = Column(Numeric(12, 4), nullable=False, server_default="0")
-    meta = Column(JSON, default=dict)
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        default=dict,
+        nullable=False,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     __table_args__ = (
         UniqueConstraint("project_id", "name", name="uq_resources_project_name"),
     )

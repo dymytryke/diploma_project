@@ -6,7 +6,7 @@ celery_app = Celery(
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
     include=[  # ← explicitly include your task module
-        "cmp_core.tasks.ec2",
+        "cmp_core.tasks.pulumi",
     ],
 )
 

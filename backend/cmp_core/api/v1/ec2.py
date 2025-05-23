@@ -77,7 +77,7 @@ async def api_get_ec2(
 async def api_update_ec2_nonblocking(
     project_id: str = Path(..., description="Проєкт ID"),
     name: str = Path(..., description="EC2 name"),
-    dto: Ec2Update = Depends(),
+    dto: Ec2Update = Body(..., description="New instance_type"),
     db: AsyncSession = Depends(get_db),
     user=Depends(require_project_member(RoleName.devops)),
 ):

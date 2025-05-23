@@ -3,149 +3,13 @@
 import uuid
 
 from cmp_core.lib.grafana import make_dashboard_url
-from cmp_core.lib.pulumi_ec2 import destroy_instance, up_instance
-from cmp_core.models.audit import AuditEvent
 from cmp_core.models.resource import Provider, Resource, ResourceState, ResourceType
 from cmp_core.schemas.ec2 import Ec2Create, Ec2Out, Ec2Update
-from cmp_core.tasks.ec2 import (
-    create_ec2_task,
-    delete_ec2_task,
-    start_ec2_task,
-    stop_ec2_task,
-    update_ec2_task,
-)
+from cmp_core.tasks.ec2 import start_ec2_task, stop_ec2_task
+from cmp_core.tasks.pulumi import reconcile_project
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-
-async def create_ec2_nonblocking(
-    db: AsyncSession,
-    project_id: str,
-    dto: Ec2Create,
-    user_id: str,
-) -> Ec2Out:
-    """
-    1) insert a placeholder Resource (state=pending)
-    2) schedule the Celery task to actually provision it
-    3) return an Ec2Out with status="pending"
-    """
-    resource_id = uuid.uuid4()
-    placeholder = Resource(
-        id=resource_id,
-        project_id=project_id,
-        provider=Provider.aws,
-        resource_type=ResourceType.vm,
-        name=dto.name,
-        region=dto.region,
-        state="pending",
-        meta={},
-    )
-    db.add(placeholder)
-    await db.commit()
-
-    # fire‐and‐forget
-    create_ec2_task.delay(
-        str(resource_id),
-        project_id,
-        dto.dict(),
-        user_id,
-    )
-
-    # return a shape matching your Ec2Out schema
-    return Ec2Out(
-        aws_id="",  # still unknown
-        name=placeholder.name,
-        region=placeholder.region,
-        instance_type=dto.instance_type,
-        public_ip="",
-        ami="",
-        launch_time="",
-        status="pending",
-        dashboard_url="",
-    )
-
-
-async def create_ec2(
-    db: AsyncSession,
-    project_id: str,
-    dto: Ec2Create,
-    user_id: str,
-) -> Ec2Out:
-    # 0) ensure no duplicate name in this project
-    q = await db.execute(
-        select(Resource).where(
-            Resource.project_id == project_id,
-            Resource.name == dto.name,
-        )
-    )
-    if q.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"An EC2 instance named '{dto.name}' already exists in project {project_id}",
-        )
-
-    # 1) run Pulumi
-    outputs = up_instance(project_id, dto.dict())
-
-    # 2) persist to resources table
-    res = Resource(
-        project_id=project_id,
-        provider=Provider.aws,
-        resource_type=ResourceType.vm,
-        name=dto.name,
-        region=dto.region,
-        state=outputs["status"],
-        meta={
-            "aws_id": outputs["aws_id"],
-            "public_ip": outputs["public_ip"],
-            "ami": outputs["ami"],
-            "instance_type": outputs["instance_type"],
-            # if you still export launch_time, include it here too:
-            # "launch_time": outputs["launch_time"],
-        },
-    )
-    db.add(res)
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        # catch any race that sneaks past the pre-flight check
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"An EC2 instance named '{dto.name}' already exists in project {project_id}",
-        )
-    await db.refresh(res)
-
-    # 3) audit event
-    evt = AuditEvent(
-        user_id=user_id,
-        action="create_ec2",
-        object_type="ec2",
-        object_id=res.id.hex,
-        details=res.meta,
-    )
-    db.add(evt)
-    await db.commit()
-
-    # 4) return all required fields
-    return Ec2Out(
-        aws_id=res.meta["aws_id"],
-        name=res.name,
-        region=res.region,
-        instance_type=res.meta["instance_type"],
-        public_ip=res.meta["public_ip"],
-        ami=res.meta["ami"],
-        launch_time=res.meta.get("launch_time", ""),  # or drop if unused
-        status=res.state,
-        dashboard_url=make_dashboard_url(
-            provider=res.provider.value,
-            resource_type=res.resource_type.value,
-            region=res.region,
-            instance_id=res.meta["aws_id"],
-        ),
-    )
 
 
 async def list_ec2(db: AsyncSession, project_id: str) -> list[Ec2Out]:
@@ -157,25 +21,28 @@ async def list_ec2(db: AsyncSession, project_id: str) -> list[Ec2Out]:
         )
     )
     items = q.scalars().all()
-    return [
-        Ec2Out(
-            aws_id=res.meta["aws_id"],
-            name=res.name,
-            region=res.region,
-            instance_type=res.meta["instance_type"],
-            public_ip=res.meta["public_ip"],
-            ami=res.meta["ami"],
-            launch_time=res.meta.get("launch_time", ""),
-            status=res.state,
-            dashboard_url=make_dashboard_url(
-                provider=res.provider.value,
-                resource_type=res.resource_type.value,
+
+    out: list[Ec2Out] = []
+    for res in items:
+        out.append(
+            Ec2Out(
+                aws_id=res.meta.get("aws_id", ""),
+                name=res.name,
                 region=res.region,
-                instance_id=res.meta["aws_id"],
-            ),
+                instance_type=res.meta.get("instance_type", ""),
+                public_ip=res.meta.get("public_ip", ""),
+                ami=res.meta.get("ami", ""),
+                launch_time=res.meta.get("launch_time", ""),
+                status=res.state,
+                dashboard_url=make_dashboard_url(
+                    provider=res.provider.value,
+                    resource_type=res.resource_type.value,
+                    region=res.region,
+                    instance_id=res.meta.get("aws_id", ""),
+                ),
+            )
         )
-        for res in items
-    ]
+    return out
 
 
 async def get_ec2(db: AsyncSession, project_id: str, name: str) -> Ec2Out:
@@ -189,59 +56,116 @@ async def get_ec2(db: AsyncSession, project_id: str, name: str) -> Ec2Out:
     )
     res = q.scalar_one_or_none()
     if not res:
-        raise ValueError("Not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
     return Ec2Out(
-        aws_id=res.meta["aws_id"],
+        aws_id=res.meta.get("aws_id", ""),
         name=res.name,
         region=res.region,
-        instance_type=res.meta["instance_type"],
-        public_ip=res.meta["public_ip"],
-        ami=res.meta["ami"],
-        launch_time=res.meta["launch_time"],
+        instance_type=res.meta.get("instance_type", ""),
+        public_ip=res.meta.get("public_ip", ""),
+        ami=res.meta.get("ami", ""),
+        launch_time=res.meta.get("launch_time", ""),
         status=res.state,
         dashboard_url=make_dashboard_url(
             provider=res.provider.value,
             resource_type=res.resource_type.value,
             region=res.region,
-            instance_id=res.meta["aws_id"],
+            instance_id=res.meta.get("aws_id", ""),
         ),
     )
 
 
-async def update_ec2(
-    db: AsyncSession, project_id: str, dto: Ec2Update, name: str, user_id: str
+def _to_ec2out(res: Resource) -> Ec2Out:
+    return Ec2Out(
+        aws_id=res.meta.get("aws_id", ""),
+        name=res.name,
+        region=res.region,
+        instance_type=res.meta.get("instance_type", ""),
+        public_ip=res.meta.get("public_ip", ""),
+        ami=res.meta.get("ami", ""),
+        launch_time=res.meta.get("launch_time", ""),
+        status=res.state.value,
+        dashboard_url=make_dashboard_url(
+            provider=res.provider.value,
+            resource_type=res.resource_type.value,
+            region=res.region,
+            instance_id=res.meta.get("aws_id", ""),
+        ),
+    )
+
+
+async def _mark_and_reconcile(
+    db: AsyncSession,
+    res: Resource,
+    project_id: str,
+    new_meta: dict | None = None,
+    terminating: bool = False,
 ) -> Ec2Out:
-    # load existing resource
+    if new_meta:
+        res.meta.update(new_meta)
+    res.state = ResourceState.terminating if terminating else ResourceState.pending
+    db.add(res)
+    await db.commit()
+    reconcile_project.delay(project_id)
+    return _to_ec2out(res)
+
+
+async def create_ec2_nonblocking(
+    db: AsyncSession,
+    project_id: str,
+    dto: Ec2Create,
+    user_id: str,
+) -> Ec2Out:
+    # 0) pre-flight: no duplicate names in this project
     q = await db.execute(
         select(Resource).where(
             Resource.project_id == project_id,
-            Resource.name == name,
-            Resource.provider == Provider.aws,
-            Resource.resource_type == ResourceType.vm,
+            Resource.name == dto.name,
         )
     )
-    res = q.scalar_one_or_none()
-    if not res:
-        raise ValueError("Not found")
+    if q.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An EC2 instance named '{dto.name}' already exists in project {project_id}",
+        )
 
-    # update its instance_type in metadata
-    res.meta["instance_type"] = dto.instance_type
-    db.add(res)
-    await db.commit()
-    await db.refresh(res)
-
-    # audit the resize
-    evt = AuditEvent(
-        user_id=user_id,
-        action="update_ec2",
-        object_type="ec2",
-        object_id=res.id.hex,
-        details={"new_instance_type": dto.instance_type},
+    # 1) insert placeholder Resource (state=pending), seed instance_type so front-end won't crash
+    resource_id = uuid.uuid4()
+    placeholder = Resource(
+        id=resource_id,
+        project_id=project_id,
+        provider=Provider.aws,
+        resource_type=ResourceType.vm,
+        name=dto.name,
+        region=dto.region,
+        state=ResourceState.pending,
+        meta={"ami": dto.ami, "instance_type": dto.instance_type},
+        created_by=user_id,
     )
-    db.add(evt)
+    db.add(placeholder)
     await db.commit()
 
-    return await get_ec2(db, project_id, name)
+    # 2) schedule the background reconcile (which will do a single pulumi up per-project)
+    reconcile_project.delay(project_id)
+
+    # 3) return the “pending” placeholder
+    return Ec2Out(
+        aws_id="",
+        name=placeholder.name,
+        region=placeholder.region,
+        instance_type=dto.instance_type,
+        public_ip="",
+        ami="",
+        launch_time="",
+        status=ResourceState.pending,
+        dashboard_url=make_dashboard_url(
+            provider=placeholder.provider.value,
+            resource_type=placeholder.resource_type.value,
+            region=placeholder.region,
+            instance_id="",  # not known yet
+        ),
+    )
 
 
 async def update_ec2_nonblocking(
@@ -251,7 +175,6 @@ async def update_ec2_nonblocking(
     name: str,
     user_id: str,
 ) -> Ec2Out:
-    # 1) load the Resource
     q = await db.execute(
         select(Resource).where(
             Resource.project_id == project_id,
@@ -264,83 +187,28 @@ async def update_ec2_nonblocking(
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    # 2) mark it “pending” again and persist
-    res.state = ResourceState.pending
-    db.add(res)
-    await db.commit()
-
-    # 3) fire the background Celery task
-    update_ec2_task.delay(
-        str(res.id),
-        project_id,
-        dto.instance_type,
-        user_id,
+    return await _mark_and_reconcile(
+        db, res, project_id, new_meta={"instance_type": dto.instance_type}
     )
-
-    # 4) return the placeholder (202)
-    return Ec2Out(
-        aws_id=res.meta.get("aws_id", ""),
-        name=res.name,
-        region=res.region,
-        instance_type=dto.instance_type,
-        public_ip=res.meta.get("public_ip", ""),
-        ami=res.meta.get("ami", ""),
-        launch_time=res.meta.get("launch_time", ""),
-        status="pending",
-        dashboard_url=make_dashboard_url(
-            provider=res.provider.value,
-            resource_type=res.resource_type.value,
-            region=res.region,
-            instance_id=res.meta["aws_id"],
-        ),
-    )
-
-
-async def delete_ec2(db: AsyncSession, project_id: str, name: str, user_id: str):
-    # fire Pulumi destroy
-    destroy_instance(project_id)
-
-    # remove from DB
-    await db.execute(
-        delete(Resource).where(
-            Resource.project_id == project_id,
-            Resource.name == name,
-            Resource.provider == Provider.aws,
-            Resource.resource_type == ResourceType.vm,
-        )
-    )
-    # audit deletion
-    evt = AuditEvent(
-        user_id=user_id,
-        action="delete_ec2",
-        object_type="ec2",
-        object_id=name,
-        details={},
-    )
-    db.add(evt)
-    await db.commit()
 
 
 async def delete_ec2_nonblocking(
-    db: AsyncSession, project_id: str, name: str, user_id: str
+    db: AsyncSession,
+    project_id: str,
+    name: str,
+    user_id: str,
 ):
-    # find the resource
-    res = await db.scalar(
+    q = await db.execute(
         select(Resource).where(
             Resource.project_id == project_id,
             Resource.name == name,
         )
     )
+    res = q.scalar_one_or_none()
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    # mark deleting
-    res.state = ResourceState.terminating
-    db.add(res)
-    await db.commit()
-
-    # dispatch destroy
-    delete_ec2_task.delay(str(res.id), user_id, project_id)
+    await _mark_and_reconcile(db, res, project_id, terminating=True)
 
 
 async def start_ec2_nonblocking(
@@ -349,7 +217,6 @@ async def start_ec2_nonblocking(
     name: str,
     user_id: str,
 ) -> Ec2Out:
-    # 1) find
     q = await db.execute(
         select(Resource).where(
             Resource.project_id == project_id,
@@ -362,31 +229,11 @@ async def start_ec2_nonblocking(
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    # 2) mark “pending”
-    res.state = ResourceState.pending
+    start_ec2_task.delay(str(res.id), user_id)
+    res.state = ResourceState.pending  # or ResourceState.creating
     db.add(res)
     await db.commit()
-
-    # 3) dispatch
-    start_ec2_task.delay(str(res.id), user_id)
-
-    # 4) return placeholder
-    return Ec2Out(
-        aws_id=res.meta.get("aws_id", ""),
-        name=res.name,
-        region=res.region,
-        instance_type=res.meta.get("instance_type", ""),
-        public_ip=res.meta.get("public_ip", ""),
-        ami=res.meta.get("ami", ""),
-        launch_time=res.meta.get("launch_time", ""),
-        status="pending",
-        dashboard_url=make_dashboard_url(
-            provider=res.provider.value,
-            resource_type=res.resource_type.value,
-            region=res.region,
-            instance_id=res.meta["aws_id"],
-        ),
-    )
+    return _to_ec2out(res)
 
 
 async def stop_ec2_nonblocking(
@@ -407,25 +254,10 @@ async def stop_ec2_nonblocking(
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    res.state = ResourceState.pending
+    # enqueue the EC2‐stop task (so it just calls Boto3.stop_instances, updates state, etc.)
+    stop_ec2_task.delay(str(res.id), user_id)
+    # set in-DB state to "stopping" so client sees it immediately
+    res.state = ResourceState.terminating
     db.add(res)
     await db.commit()
-
-    stop_ec2_task.delay(str(res.id), user_id)
-
-    return Ec2Out(
-        aws_id=res.meta.get("aws_id", ""),
-        name=res.name,
-        region=res.region,
-        instance_type=res.meta.get("instance_type", ""),
-        public_ip=res.meta.get("public_ip", ""),
-        ami=res.meta.get("ami", ""),
-        launch_time=res.meta.get("launch_time", ""),
-        status="pending",
-        dashboard_url=make_dashboard_url(
-            provider=res.provider.value,
-            resource_type=res.resource_type.value,
-            region=res.region,
-            instance_id=res.meta["aws_id"],
-        ),
-    )
+    return _to_ec2out(res)
