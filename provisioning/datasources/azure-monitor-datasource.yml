@@ -1,0 +1,24 @@
+apiVersion: 1
+datasources:
+  - name: Azure Monitor
+    uid: azuremonitor # This UID should match the one used in the dashboard JSON
+    type: grafana-azure-monitor-datasource
+    access: proxy # Or direct, depending on your network setup
+    jsonData:
+      cloudName: azuremonitor # For public Azure cloud
+      # --- Service Principal Authentication (Recommended) ---
+      authType: clientsecret
+      tenantId: ${AZURE_TENANT_ID}
+      clientId: ${AZURE_CLIENT_ID}
+      # --- Managed Identity Authentication (If Grafana runs on an Azure service with MSI) ---
+      # authType: msi
+      # --- Azure CLI Authentication (For local development, not recommended for production) ---
+      # authType: azurecli
+      # --- Common settings ---
+      # subscriptionId: ${AZURE_DEFAULT_SUBSCRIPTION_ID} # Optional: Default subscription if needed
+      azureLogAnalyticsSameAs: true # Use same credentials for Log Analytics if applicable
+    secureJsonData:
+      # --- For Service Principal Authentication ---
+      clientSecret: ${AZURE_CLIENT_SECRET}
+    version: 1
+    editable: true

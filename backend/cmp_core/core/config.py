@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     initial_admin_email: str | None = Field(None, env="INITIAL_ADMIN_EMAIL")
     initial_admin_password: str | None = Field(None, env="INITIAL_ADMIN_PASSWORD")
 
+    # Azure credentials for pulumi_azure_native
+    azure_client_id: str = Field(..., env="AZURE_CLIENT_ID")
+    azure_client_secret: str = Field(..., env="AZURE_CLIENT_SECRET")
+    azure_tenant_id: str = Field(..., env="AZURE_TENANT_ID")
+    azure_subscription_id: str = Field(..., env="AZURE_SUBSCRIPTION_ID")
+
     # Grafana
     grafana_base_url: str = Field(..., env="GRAFANA_BASE_URL")
     grafana_org_id: int = Field(1, env="GRAFANA_ORG_ID")

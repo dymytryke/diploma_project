@@ -8,6 +8,7 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
     include=[  # ← explicitly include your task module
         "cmp_core.tasks.pulumi",
+        "cmp_core.tasks.azure",
     ],
 )
 

@@ -4,6 +4,9 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
 from celery import shared_task
 from cmp_core.core.db_sync import SessionLocal
 from cmp_core.lib.pulumi_project import destroy_project, up_project
@@ -31,40 +34,117 @@ def fetch_aws_info(client, aws_id: str) -> dict:
     }
 
 
+def parse_azure_id(vm_id: str) -> tuple[str, str, str]:
+    parts = vm_id.strip("/").split("/")
+    # /subscriptions/{sub}/resourceGroups/{rg}/providers/.../virtualMachines/{vm}
+    return parts[1], parts[3], parts[-1]
+
+
+def fetch_azure_info(
+    vm_id: str,
+    cred: DefaultAzureCredential,
+    compute_clients: dict,
+    network_clients: dict,
+) -> dict:
+    sub, rg, name = parse_azure_id(vm_id)
+    compute = compute_clients.setdefault(sub, ComputeManagementClient(cred, sub))
+    network = network_clients.setdefault(sub, NetworkManagementClient(cred, sub))
+
+    vm = compute.virtual_machines.get(rg, name, expand="instanceView")
+    # PowerState/status
+    ps = next(
+        (
+            s.code.split("/")[-1]
+            for s in vm.instance_view.statuses
+            if s.code.startswith("PowerState/")
+        ),
+        None,
+    )
+
+    # public IP via NIC
+    nic_ref = vm.network_profile.network_interfaces[0].id
+    nic_name = nic_ref.split("/networkInterfaces/")[-1]
+    nic = network.network_interfaces.get(rg, nic_name)
+    ip_conf = nic.ip_configurations[0]
+    public_ip = ""
+    if ip_conf.public_ip_address:
+        pip_id = ip_conf.public_ip_address.id
+        pip_name = pip_id.split("/publicIPAddresses/")[-1]
+        pip = network.public_ip_addresses.get(rg, pip_name)
+        public_ip = pip.ip_address or ""
+
+    return {"public_ip": public_ip, "power_state": ps}
+
+
 def reconcile_single(
-    resource: Resource, outputs: dict, ec2_clients: dict
+    resource: Resource,
+    outputs: dict,
+    ec2_clients: dict,
+    azure_cred: DefaultAzureCredential,
+    azure_compute: dict,
+    azure_network: dict,
 ) -> tuple[Resource, AuditEvent] | None:
     meta = (resource.meta or {}).copy()
     changed = False
 
+    # Azure VM
+    if resource.provider.value == "azure":
+        vm_id = outputs.get(f"{resource.name}-id") or meta.get("azure_vm_id")
+        if not vm_id:
+            return None
+
+        # Ensure the definitive vm_id (Azure Resource ID) is stored in meta
+        # and mark as changed if it's new or different.
+        if meta.get("azure_vm_id") != vm_id:
+            meta["azure_vm_id"] = vm_id
+            changed = True
+
+        info = fetch_azure_info(vm_id, azure_cred, azure_compute, azure_network)
+        if info["public_ip"] and meta.get("public_ip") != info["public_ip"]:
+            meta["public_ip"] = info["public_ip"]
+            changed = True
+        if meta.get("power_state") != info["power_state"]:
+            meta["power_state"] = info["power_state"]
+            changed = True
+
+        if not changed:
+            return None
+
+        resource.meta = meta
+        event = AuditEvent(
+            user_id=getattr(resource, "created_by", None),
+            project_id=resource.project_id,
+            action="reconcile",
+            object_type="resource",
+            object_id=str(resource.id),
+            details={"power_state": meta["power_state"], **meta},
+        )
+        return resource, event
+
+    # AWS EC2
     out_id = outputs.get(f"{resource.name}-id")
     out_ip = outputs.get(f"{resource.name}-ip")
     aws_id = out_id or meta.get("aws_id")
     if not aws_id:
         return None
 
-    # Оновлення aws_id
     if out_id and meta.get("aws_id") != out_id:
         meta["aws_id"] = out_id
         changed = True
 
-    # Одержуємо/створюємо клієнт EC2
     client = ec2_clients.setdefault(
-        resource.region, boto3.client("ec2", region_name=resource.region)
+        resource.region,
+        boto3.client("ec2", region_name=resource.region),
     )
 
     info = fetch_aws_info(client, aws_id)
-
-    # Порівнюємо та оновлюємо public_ip і launch_time
     if info["public_ip"] and meta.get("public_ip") != info["public_ip"]:
         meta["public_ip"] = info["public_ip"]
         changed = True
-
     if meta.get("launch_time") != info["launch_time"]:
         meta["launch_time"] = info["launch_time"]
         changed = True
 
-    # Мапінг станів
     mapping = {
         "pending": ResourceState.pending,
         "running": ResourceState.running,
@@ -75,7 +155,6 @@ def reconcile_single(
     }
     actual_state = mapping.get(info["state"], ResourceState.error)
 
-    # Конвергенція бажаного та фактичного стану
     desired = resource.state
     if desired != actual_state:
         if desired == ResourceState.running:
@@ -89,11 +168,9 @@ def reconcile_single(
             resource.state = ResourceState.stopped
             changed = True
         else:
-            # будь-який інший (pending, terminating тощо): синхронізуємо зі справжнім станом
             resource.state = actual_state
             changed = True
 
-    # Додатковий синхронізований public_ip з Pulumi
     if out_ip and meta.get("public_ip") != out_ip:
         meta["public_ip"] = out_ip
         changed = True
@@ -119,12 +196,23 @@ def reconcile_project(project_id: str):
     with SessionLocal() as session:
         resources = load_resources(session, project_id)
         outputs = up_project(project_id, resources)
-        ec2_clients: dict[str, boto3.client] = {}
 
-        # Паралельне оброблення ресурсів
+        ec2_clients: dict[str, boto3.client] = {}
+        azure_cred = DefaultAzureCredential()
+        azure_compute_clients: dict[str, ComputeManagementClient] = {}
+        azure_network_clients: dict[str, NetworkManagementClient] = {}
+
         with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
             futures = {
-                executor.submit(reconcile_single, r, outputs, ec2_clients): r
+                executor.submit(
+                    reconcile_single,
+                    r,
+                    outputs,
+                    ec2_clients,
+                    azure_cred,
+                    azure_compute_clients,
+                    azure_network_clients,
+                ): r
                 for r in resources
             }
             for future in as_completed(futures):
@@ -151,13 +239,8 @@ def reconcile_all_projects():
     """
     Find every project and enqueue a reconcile for each.
     """
-    db = SessionLocal()
-    try:
-        # Pull back just the project IDs (UUIDs)
-        result = db.execute(select(Project.id))
+    with SessionLocal() as session:
+        result = session.execute(select(Project.id))
         project_ids = [str(pid) for pid in result.scalars().all()]
-
         for pid in project_ids:
             reconcile_project.delay(pid)
-    finally:
-        db.close()
