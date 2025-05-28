@@ -257,7 +257,7 @@ async def stop_ec2_nonblocking(
     # enqueue the EC2‐stop task (so it just calls Boto3.stop_instances, updates state, etc.)
     stop_ec2_task.delay(str(res.id), user_id)
     # set in-DB state to "stopping" so client sees it immediately
-    res.state = ResourceState.terminating
+    res.state = ResourceState.pending
     db.add(res)
     await db.commit()
     return _to_ec2out(res)

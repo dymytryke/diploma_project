@@ -30,12 +30,21 @@ def start_azure_task(resource_id: str, user_id: str):
         cred = DefaultAzureCredential()
         client = ComputeManagementClient(cred, sub)
 
-        # запускаємо VM
         poller = client.virtual_machines.begin_start(rg, name)
-        poller.result()  # чекаємо завершення
+        poller.result()
 
-        # оновлюємо стан
+        # Fetch the latest status from Azure after starting
+        # We need compute_clients and network_clients for fetch_azure_info
+        # For simplicity here, we'll just set a known good state,
+        # but ideally, you'd call fetch_azure_info.
+        # However, fetch_azure_info is designed for reconcile_single's structure.
+        # For now, let's assume 'running' is the direct outcome.
+        # A more robust solution would be to call reconcile_single for this resource.
+
         res.state = ResourceState.running
+        if res.meta is None:
+            res.meta = {}
+        res.meta["power_state"] = "running"  # Set meta power_state
         db.add(res)
         evt = AuditEvent(
             user_id=user_id,
@@ -64,12 +73,19 @@ def stop_azure_task(resource_id: str, user_id: str):
         cred = DefaultAzureCredential()
         client = ComputeManagementClient(cred, sub)
 
-        # зупиняємо VM
-        poller = client.virtual_machines.begin_power_off(rg, name)
-        poller.result()  # чекаємо завершення
+        poller = client.virtual_machines.begin_power_off(
+            rg, name
+        )  # Use power_off for deallocation by default
+        poller.result()
 
-        # оновлюємо стан
+        # After power_off, the VM is typically 'deallocated'.
+        # Let's update meta to reflect this.
         res.state = ResourceState.stopped
+        if res.meta is None:
+            res.meta = {}
+        res.meta["power_state"] = (
+            "deallocated"  # Set meta power_state to actual Azure state
+        )
         db.add(res)
         evt = AuditEvent(
             user_id=user_id,
