@@ -1,0 +1,20 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.vscode/
+.git/
+.pytest_cache/
+.ruff_cache/
+celerybeat-schedule
+# Add other files/directories to ignore if necessary
+*.sqlite3
+*.db
+migrations/versions/__pycache__/
+cmp_core/__pycache__/
+cmp_core/**/__pycache__/
+tests/__pycache__/

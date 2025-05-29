@@ -21,7 +21,13 @@ kombu = "^5.5.3"
 azure-identity = "^1.23.0"
 azure-mgmt-compute = "^34.1.0"
 azure-mgmt-network = "^29.0.0"
-
+asyncpg = "^0.30.0"
+alembic = "^1.16.1"
+celery = "^5.4.0"
+redis = "^5.0.7"
+psycopg2-binary = "^2.9.9"
+boto3 = "^1.38.25"
+pulumi-azure-native = "^3.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.10"

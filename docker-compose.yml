@@ -1,30 +1,156 @@
-version: '3.9'
+version: '3.8' # Or your preferred version
+
 services:
   db:
-    image: postgres:16
+    image: postgres:16 # Using version from your latest docker-compose
     environment:
-      POSTGRES_USER: cmp
-      POSTGRES_PASSWORD: cmp
-      POSTGRES_DB: cmp_dev
-    ports: ["5432:5432"]
-  rabbitmq:
-    image: rabbitmq:3.11-management
+      POSTGRES_USER: ${DB_USER:-cmp}
+      POSTGRES_PASSWORD: ${DB_PASS:-cmp}
+      POSTGRES_DB: ${DB_NAME:-cmp_dev} # Matches DATABASE_URL in .env
     ports:
-      - "5672:5672"      # AMQP broker
-      - "15672:15672"    # Management UI
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cmp} -d ${DB_NAME:-cmp_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.11-management # Using version from your latest docker-compose
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"      # AMQP broker
+      - "${RABBITMQ_MANAGE_PORT:-15672}:15672"    # Management UI
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   grafana:
-    image: grafana/grafana:10.3.1
-    env_file: .env
+    image: grafana/grafana:10.3.1 # Using version from your latest docker-compose
+    env_file: ./.env # Loads all variables from .env
+    # Specific environment variables for Grafana if needed, can override .env
     environment:
       GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      # Ensure DATABASE_URL etc. from .env don't conflict if Grafana tries to use them
+      # It's generally safer to be explicit or ensure Grafana doesn't pick up unrelated DB vars
     ports:
       - "3000:3000"
     volumes:
       - ./provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: sh -c "poetry run alembic upgrade head && poetry run uvicorn cmp_core.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./backend:/app
+      - pulumi_state_data:/pulumi_state # Mount the volume for Pulumi state
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-cmp}:${DB_PASS:-cmp}@db:${DB_PORT:-5432}/${DB_NAME:-cmp_dev}
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:${RABBITMQ_PORT:-5672}//
+      REDIS_CACHE_URL: redis://redis:${REDIS_PORT:-6379}/0
+      ARM_CLIENT_ID: ${AZURE_CLIENT_ID}
+      ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      ARM_TENANT_ID: ${AZURE_TENANT_ID}
+      ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
+      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend at this path
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: sh -c "poetry run celery -A cmp_core.celery_app:celery_app worker --loglevel=info -c 1"
+    volumes:
+      - ./backend:/app
+      - pulumi_state_data:/pulumi_state # Mount the volume for Pulumi state
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-cmp}:${DB_PASS:-cmp}@db:${DB_PORT:-5432}/${DB_NAME:-cmp_dev}
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:${RABBITMQ_PORT:-5672}//
+      REDIS_CACHE_URL: redis://redis:${REDIS_PORT:-6379}/0
+      ARM_CLIENT_ID: ${AZURE_CLIENT_ID}
+      ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      ARM_TENANT_ID: ${AZURE_TENANT_ID}
+      ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
+      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend
+    depends_on:
+      api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: sh -c "poetry run celery -A cmp_core.celery_app:celery_app beat --loglevel=info"
+    volumes:
+      - ./backend:/app
+      - pulumi_state_data:/pulumi_state # Mount the volume for Pulumi state
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-cmp}:${DB_PASS:-cmp}@db:${DB_PORT:-5432}/${DB_NAME:-cmp_dev}
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:${RABBITMQ_PORT:-5672}//
+      REDIS_CACHE_URL: redis://redis:${REDIS_PORT:-6379}/0
+      ARM_CLIENT_ID: ${AZURE_CLIENT_ID}
+      ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      ARM_TENANT_ID: ${AZURE_TENANT_ID}
+      ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
+      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend
+    depends_on:
+      api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  grafana_data:
+  pulumi_state_data: {} # Define the named volume for Pulumi state
