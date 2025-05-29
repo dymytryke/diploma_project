@@ -1,4 +1,6 @@
 # cmp_core/schemas/ec2.py
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -14,12 +16,12 @@ class Ec2Update(BaseModel):
 
 
 class Ec2Out(BaseModel):
-    aws_id: str
+    aws_id: Optional[str] = None
     name: str
     region: str
     instance_type: str
-    public_ip: str
-    ami: str
+    public_ip: Optional[str] = None
+    ami: Optional[str] = None
     launch_time: str
     status: str
     dashboard_url: str | None = None

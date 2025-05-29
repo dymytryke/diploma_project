@@ -44,16 +44,18 @@ def aws_handler(resources, pulumi_providers):
             pulumi.export(f"{r.name}-ip", inst.public_ip)
 
             aws_to_our = {
-                "pending": ResourceState.pending,
-                "running": ResourceState.running,
-                "shutting-down": ResourceState.terminating,
-                "stopping": ResourceState.terminating,
-                "stopped": ResourceState.stopped,
-                "terminated": ResourceState.terminated,
+                "pending": ResourceState.PROVISIONING,  # Use new state
+                "running": ResourceState.RUNNING,  # Use new state
+                "shutting-down": ResourceState.STOPPING,  # Use new state (or PENDING_DEPROVISION/DEPROVISIONING)
+                "stopping": ResourceState.STOPPING,  # Use new state
+                "stopped": ResourceState.STOPPED,  # Use new state
+                "terminated": ResourceState.TERMINATED,  # Use new state
             }
             pulumi.export(
                 f"{r.name}-status",
                 inst.instance_state.apply(
-                    lambda s: aws_to_our.get(s, ResourceState.error)
+                    lambda s: aws_to_our.get(
+                        s, ResourceState.UNKNOWN
+                    ).value  # Map to enum value, default to UNKNOWN
                 ),
             )

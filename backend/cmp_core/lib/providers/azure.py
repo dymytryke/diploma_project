@@ -95,11 +95,16 @@ def azure_handler(specs, pulumi_providers):
 
         # 8) Export a simple status from the VM's instance view
         # Use the instance_view property of the vm resource itself
+        # TODO: Properly map Azure's display_status (e.g., "VM running", "Provisioning succeeded") to your ResourceState enum values
         status = vm.instance_view.apply(
             lambda iv: (
-                iv.statuses[1].display_status
-                if iv and iv.statuses and len(iv.statuses) > 1 and iv.statuses[1]
-                else ResourceState.pending  # Or some other appropriate default/pending state
+                iv.statuses[1].display_status  # This is a string like "VM running"
+                if iv
+                and iv.statuses
+                and len(iv.statuses) > 1
+                and iv.statuses[1]
+                and iv.statuses[1].display_status
+                else ResourceState.PROVISIONING.value  # Default to provisioning if status not clear yet
             )
         )
         pulumi.export(f"{spec.name}-status", status)

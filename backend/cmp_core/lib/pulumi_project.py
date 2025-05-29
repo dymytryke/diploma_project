@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 # ensure every provider module under cmp_core.lib.providers is loaded,
 # so their @register_provider(...) calls actually run:
 import cmp_core.lib.providers  # the package
+import pulumi
 from cmp_core.core.config import settings
 from cmp_core.lib.pulumi_adapter import all_handlers
 from cmp_core.models.resource import ResourceState
@@ -39,8 +40,19 @@ def _inline_program(resources: List[Any]) -> None:
     # turn each Resource into a tiny ResourceSpec-like object
     for r in resources:
 
-        # 🚨 if we've marked this for deletion, omit it entirely
-        if r.state == ResourceState.terminating:
+        # 🚨 If a resource is marked for deprovisioning (or is already being deprovisioned),
+        # omit it from the program. Pulumi will see it's missing and plan a delete.
+        if r.state in [ResourceState.PENDING_DEPROVISION, ResourceState.DEPROVISIONING]:
+            pulumi.log.info(
+                f"Omitting resource {r.name} from Pulumi program due to state: {r.state.value}"
+            )
+            continue
+
+        # Also, if it's already terminated, don't try to manage it.
+        if r.state == ResourceState.TERMINATED:
+            pulumi.log.info(
+                f"Skipping already terminated resource {r.name} in Pulumi program."
+            )
             continue
 
         provider = getattr(r.provider, "value", r.provider)

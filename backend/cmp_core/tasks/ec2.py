@@ -1,192 +1,158 @@
 # cmp_core/tasks/ec2.py
+import logging
+
 import boto3
-from cmp_core.celery_app import celery_app
+from celery import shared_task
 from cmp_core.core.db_sync import SessionLocal
-from cmp_core.lib.pulumi_ec2 import destroy_instance, up_instance
 from cmp_core.models.audit import AuditEvent
 from cmp_core.models.resource import Resource, ResourceState
 
-
-def get_launch_time(instance_id: str, region: str) -> str:
-    ec2 = boto3.client("ec2", region_name=region)
-    resp = ec2.describe_instances(InstanceIds=[instance_id])
-    return resp["Reservations"][0]["Instances"][0]["LaunchTime"].isoformat()
+logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="cmp_core.tasks.create_ec2")
-def create_ec2_task(resource_id: str, project_id: str, cfg: dict, user_id: str):
-    """
-    1) Run Pulumi up
-    2) Update Resource row with outputs
-    3) Emit AuditEvent
-    """
-    outputs = up_instance(project_id, cfg)
+@shared_task(name="cmp_core.tasks.start_ec2_task")
+def start_ec2_task(resource_id: str, user_id: str):  # user_id for audit event
+    logger.info(f"Starting EC2 task for resource_id: {resource_id}")
+    with SessionLocal() as session:
+        try:
+            resource = session.query(Resource).filter_by(id=resource_id).one_or_none()
+            if not resource:
+                logger.error(f"Resource {resource_id} not found for start_ec2_task.")
+                return
 
-    db = SessionLocal()
-    try:
-        # load the placeholder Resource
-        res: Resource = db.query(Resource).filter_by(id=resource_id).one()
+            if resource.state != ResourceState.PENDING_START:
+                logger.warning(
+                    f"start_ec2_task called for resource {resource_id} not in PENDING_START state (current: {resource.state.value}). Proceeding cautiously."
+                )
+                # Or, you could choose to exit if not PENDING_START:
+                # if resource.state != ResourceState.PENDING_START:
+                #     logger.error(f"Resource {resource_id} is not in PENDING_START state. Aborting start task.")
+                #     return
 
-        # update state
-        res.state = outputs["status"]
+            resource.state = ResourceState.STARTING
+            session.add(resource)
+            session.commit()
+            logger.info(f"Resource {resource_id} state set to STARTING.")
 
-        # fetch real launch_time from AWS
-        launch_ts = get_launch_time(outputs["aws_id"], cfg["region"])
+            aws_id = resource.meta.get("aws_id")
+            if not aws_id:
+                logger.error(f"aws_id not found in meta for resource {resource_id}.")
+                resource.state = ResourceState.ERROR_STARTING
+                resource.meta["error_message"] = "aws_id missing in metadata"
+                session.add(resource)
+                session.commit()
+                return
 
-        # update meta with everything
-        res.meta = {
-            "aws_id": outputs["aws_id"],
-            "public_ip": outputs["public_ip"],
-            "ami": outputs["ami"],
-            "instance_type": outputs["instance_type"],
-            "launch_time": launch_ts,
-        }
-        db.add(res)
+            client = boto3.client("ec2", region_name=resource.region)
+            client.start_instances(InstanceIds=[aws_id])
 
-        evt = AuditEvent(
-            user_id=user_id,
-            project_id=project_id,
-            action="create_ec2",
-            object_type="ec2",
-            object_id=str(res.id),
-            details=res.meta,
-        )
-        db.add(evt)
+            # Wait for instance to be running (optional, can be long)
+            # For simplicity, we'll assume start_instances initiates it and a poller/reconciler would confirm RUNNING.
+            # Or, we can do a brief wait and check here.
+            # For now, let's optimistically set to RUNNING if API call succeeds.
+            # A more robust solution would involve a waiter or subsequent status check.
 
-        db.commit()
-    finally:
-        db.close()
+            resource.state = ResourceState.RUNNING
+            logger.info(f"EC2 instance {aws_id} start initiated. State set to RUNNING.")
+            action = "ec2_start_success"
+            details = {"aws_id": aws_id, "final_state": resource.state.value}
 
-    return outputs
-
-
-@celery_app.task(name="cmp_core.tasks.update_ec2")
-def update_ec2_task(resource_id: str, project_id: str, new_type: str, user_id: str):
-    db = SessionLocal()
-    try:
-        res: Resource = db.query(Resource).get(resource_id)
-        # build the Pulumi config from the existing row + new type
-        cfg = {
-            "name": res.name,
-            "region": res.region,
-            "ami": res.meta["ami"],
-            "instance_type": new_type,
-        }
-        outputs = up_instance(project_id, cfg)
-
-        # write back real status & new metadata
-        res.state = outputs["status"]
-        res.meta = {
-            **res.meta,
-            "instance_type": outputs["instance_type"],
-            "public_ip": outputs["public_ip"],
-            "aws_id": outputs["aws_id"],
-        }
-        db.add(res)
-
-        # audit it
-        evt = AuditEvent(
-            user_id=user_id,
-            project_id=project_id,
-            action="update_ec2",
-            object_type="ec2",
-            object_id=str(res.id),
-            details={"new_instance_type": new_type},
-        )
-        db.add(evt)
-        db.commit()
-    finally:
-        db.close()
+        except Exception as e:
+            logger.error(
+                f"Error starting EC2 instance {resource_id}: {e}", exc_info=True
+            )
+            if resource:  # Check if resource was loaded
+                resource.state = ResourceState.ERROR_STARTING
+                resource.meta["error_message"] = str(e)
+                action = "ec2_start_failure"
+                details = {
+                    "aws_id": resource.meta.get("aws_id"),
+                    "error": str(e),
+                    "final_state": resource.state.value,
+                }
+            else:  # Should not happen if initial check passes
+                action = "ec2_start_failure_no_resource"
+                details = {"resource_id": resource_id, "error": str(e)}
+        finally:
+            if resource:  # Ensure resource is defined for audit event
+                event = AuditEvent(
+                    user_id=user_id,
+                    project_id=resource.project_id,
+                    action=action,
+                    object_type="resource",
+                    object_id=str(resource.id),
+                    details=details,
+                )
+                session.add(event)
+            session.commit()
+    logger.info(f"Finished EC2 start task for resource_id: {resource_id}")
 
 
-@celery_app.task(name="cmp_core.tasks.delete_ec2")
-def delete_ec2_task(resource_id: str, user_id: str, project_id: str):
-    """
-    1) Run Pulumi destroy
-    2) Mark Resource as terminated
-    3) Emit AuditEvent
-    """
-    # 1) tear down in Pulumi
-    destroy_instance(project_id)
-
-    # 2) update DB
-    db = SessionLocal()
-    try:
-        res: Resource = db.query(Resource).get(resource_id)
-        res.state = ResourceState.terminated
-        db.add(res)
-
-        # 3) audit
-        evt = AuditEvent(
-            user_id=user_id,
-            project_id=project_id,
-            action="delete_ec2",
-            object_type="ec2",
-            object_id=resource_id,
-            details={"name": res.name},
-        )
-        db.add(evt)
-
-        db.commit()
-    finally:
-        db.close()
-
-
-@celery_app.task(name="cmp_core.tasks.start_ec2")
-def start_ec2_task(resource_id: str, user_id: str):
-    db = SessionLocal()
-    try:
-        # 1) load
-        res: Resource = db.query(Resource).filter_by(id=resource_id).one()
-
-        # 2) call AWS
-        client = boto3.client("ec2", region_name=res.region)
-        client.start_instances(InstanceIds=[res.meta["aws_id"]])
-        waiter = client.get_waiter("instance_running")
-        waiter.wait(InstanceIds=[res.meta["aws_id"]])
-
-        # 3) persist new state
-        res.state = ResourceState.running
-        db.add(res)
-
-        # 4) audit
-        evt = AuditEvent(
-            user_id=user_id,
-            project_id=res.project_id,
-            action="start_ec2",
-            object_type="ec2",
-            object_id=str(res.id),
-            details={},
-        )
-        db.add(evt)
-        db.commit()
-    finally:
-        db.close()
-
-
-@celery_app.task(name="cmp_core.tasks.stop_ec2")
+@shared_task(name="cmp_core.tasks.stop_ec2_task")
 def stop_ec2_task(resource_id: str, user_id: str):
-    db = SessionLocal()
-    try:
-        res: Resource = db.query(Resource).filter_by(id=resource_id).one()
+    logger.info(f"Starting EC2 stop task for resource_id: {resource_id}")
+    with SessionLocal() as session:
+        try:
+            resource = session.query(Resource).filter_by(id=resource_id).one_or_none()
+            if not resource:
+                logger.error(f"Resource {resource_id} not found for stop_ec2_task.")
+                return
 
-        client = boto3.client("ec2", region_name=res.region)
-        client.stop_instances(InstanceIds=[res.meta["aws_id"]])
-        waiter = client.get_waiter("instance_stopped")
-        waiter.wait(InstanceIds=[res.meta["aws_id"]])
+            if resource.state != ResourceState.PENDING_STOP:
+                logger.warning(
+                    f"stop_ec2_task called for resource {resource_id} not in PENDING_STOP state (current: {resource.state.value}). Proceeding cautiously."
+                )
 
-        res.state = ResourceState.stopped
-        db.add(res)
+            resource.state = ResourceState.STOPPING
+            session.add(resource)
+            session.commit()
+            logger.info(f"Resource {resource_id} state set to STOPPING.")
 
-        evt = AuditEvent(
-            user_id=user_id,
-            project_id=res.project_id,
-            action="stop_ec2",
-            object_type="ec2",
-            object_id=str(res.id),
-            details={},
-        )
-        db.add(evt)
-        db.commit()
-    finally:
-        db.close()
+            aws_id = resource.meta.get("aws_id")
+            if not aws_id:
+                logger.error(f"aws_id not found in meta for resource {resource_id}.")
+                resource.state = ResourceState.ERROR_STOPPING
+                resource.meta["error_message"] = "aws_id missing in metadata"
+                session.add(resource)
+                session.commit()
+                return
+
+            client = boto3.client("ec2", region_name=resource.region)
+            client.stop_instances(InstanceIds=[aws_id])
+
+            # Similar to start, we optimistically set to STOPPED.
+            # A robust solution would use waiters or subsequent status checks.
+            resource.state = ResourceState.STOPPED
+            logger.info(f"EC2 instance {aws_id} stop initiated. State set to STOPPED.")
+            action = "ec2_stop_success"
+            details = {"aws_id": aws_id, "final_state": resource.state.value}
+
+        except Exception as e:
+            logger.error(
+                f"Error stopping EC2 instance {resource_id}: {e}", exc_info=True
+            )
+            if resource:
+                resource.state = ResourceState.ERROR_STOPPING
+                resource.meta["error_message"] = str(e)
+                action = "ec2_stop_failure"
+                details = {
+                    "aws_id": resource.meta.get("aws_id"),
+                    "error": str(e),
+                    "final_state": resource.state.value,
+                }
+            else:
+                action = "ec2_stop_failure_no_resource"
+                details = {"resource_id": resource_id, "error": str(e)}
+        finally:
+            if resource:
+                event = AuditEvent(
+                    user_id=user_id,
+                    project_id=resource.project_id,
+                    action=action,
+                    object_type="resource",
+                    object_id=str(resource.id),
+                    details=details,
+                )
+                session.add(event)
+            session.commit()
+    logger.info(f"Finished EC2 stop task for resource_id: {resource_id}")

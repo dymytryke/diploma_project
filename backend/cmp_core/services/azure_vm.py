@@ -123,7 +123,6 @@ async def create_azure_nonblocking(
         "image_reference": dto.image_reference if dto.image_reference else {},
         "admin_username": dto.admin_username,
         "admin_password": dto.admin_password,  # Consider security implications
-        "power_state": ResourceState.pending.value,
         # azure_vm_id, public_ip, subscription_id, resource_group_name will be populated by reconcile_single
     }
     placeholder = Resource(
@@ -132,8 +131,8 @@ async def create_azure_nonblocking(
         provider=Provider.azure,
         resource_type=ResourceType.vm,
         name=dto.name,
-        region=dto.location or "",  # Resource.region should be set from dto.location
-        state=ResourceState.pending,
+        region=dto.location or "",
+        state=ResourceState.PENDING_PROVISION,  # Use new state
         meta=initial_meta,
         created_by=user_id,
     )
@@ -143,7 +142,7 @@ async def create_azure_nonblocking(
 
     reconcile_project.delay(project_id)
 
-    return _to_azure_vm_out(placeholder)  # Use the corrected helper function
+    return _to_azure_vm_out(placeholder)  # _to_azure_vm_out will use placeholder.state
 
 
 async def update_azure_nonblocking(
@@ -151,7 +150,7 @@ async def update_azure_nonblocking(
     project_id: str,
     name: str,
     dto: AzureUpdate,
-    user_id: str,  # user_id was unused, can be removed if not needed for audit or other logic
+    user_id: str,
 ) -> AzureOut:
     q = await db.execute(
         select(Resource).where(
@@ -165,6 +164,17 @@ async def update_azure_nonblocking(
     if not r_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
+    # Add checks: e.g., cannot update if PENDING_DEPROVISION or TERMINATED
+    if r_item.state in [
+        ResourceState.PENDING_DEPROVISION,
+        ResourceState.DEPROVISIONING,
+        ResourceState.TERMINATED,
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot update resource in state: {r_item.state.value}",
+        )
+
     updates = dto.model_dump(exclude_unset=True)
     if r_item.meta is None:  # Ensure meta exists
         r_item.meta = {}
@@ -174,7 +184,7 @@ async def update_azure_nonblocking(
     if "admin_password" in updates and updates["admin_password"] is not None:
         r_item.meta["admin_password"] = updates["admin_password"]  # Consider security
 
-    r_item.state = ResourceState.pending
+    r_item.state = ResourceState.PENDING_UPDATE  # Use new state
     db.add(r_item)
     await db.commit()
     await db.refresh(r_item)  # Refresh to get any DB-side changes before converting
@@ -187,7 +197,7 @@ async def delete_azure_nonblocking(
     db: AsyncSession,
     project_id: str,
     name: str,
-    user_id: str,  # user_id was unused, can be removed if not needed for audit or other logic
+    user_id: str,
 ):
     q = await db.execute(
         select(Resource).where(
@@ -201,7 +211,24 @@ async def delete_azure_nonblocking(
     if not r_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    r_item.state = ResourceState.terminating
+    # Add checks similar to EC2 delete
+    if r_item.state in [
+        ResourceState.PENDING_DEPROVISION,
+        ResourceState.DEPROVISIONING,
+        ResourceState.TERMINATED,
+    ]:
+        if r_item.state == ResourceState.DEPROVISIONING:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Resource is already being deprovisioned.",
+            )
+        if r_item.state == ResourceState.TERMINATED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Resource is already terminated.",
+            )
+
+    r_item.state = ResourceState.PENDING_DEPROVISION  # Use new state
     db.add(r_item)
     await db.commit()
     reconcile_project.delay(project_id)
@@ -226,10 +253,24 @@ async def start_azure_nonblocking(
     if not r_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    # r_item.state = ResourceState.starting # Consider setting a more specific state
+    # Add checks: Can only start if STOPPED or perhaps ERROR_STARTING
+    if r_item.state not in [
+        ResourceState.STOPPED,
+        ResourceState.ERROR_STARTING,
+        ResourceState.ERROR,
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot start resource in state: {r_item.state.value}. Must be STOPPED or an error state related to starting.",
+        )
+
+    # The current Azure start task updates meta['power_state'] but not the main Resource.state
+    # We should set the main state here to PENDING_START
+    r_item.state = ResourceState.PENDING_START  # Use new state
     if r_item.meta is None:
         r_item.meta = {}
-    r_item.meta["power_state"] = "starting"
+    # The task itself will handle the 'STARTING' and then 'RUNNING' or 'ERROR_STARTING'
+    # No need to set meta['power_state'] = "starting" here, let the task do it.
     db.add(r_item)
     await db.commit()
     await db.refresh(r_item)
@@ -256,10 +297,21 @@ async def stop_azure_nonblocking(
     if not r_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    # r_item.state = ResourceState.stopping # Consider setting a more specific state
+    # Add checks: Can only stop if RUNNING or perhaps ERROR_STOPPING
+    if r_item.state not in [
+        ResourceState.RUNNING,
+        ResourceState.ERROR_STOPPING,
+        ResourceState.ERROR,
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot stop resource in state: {r_item.state.value}. Must be RUNNING or an error state related to stopping.",
+        )
+
+    r_item.state = ResourceState.PENDING_STOP  # Use new state
     if r_item.meta is None:
         r_item.meta = {}
-    r_item.meta["power_state"] = "stopping"
+    # No need to set meta['power_state'] = "stopping" here, let the task do it.
     db.add(r_item)
     await db.commit()
     await db.refresh(r_item)

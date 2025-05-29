@@ -1,6 +1,13 @@
+import logging
+
 from celery import Celery
 from celery.schedules import crontab
 from cmp_core.core.config import settings
+
+logging.getLogger("azure.identity").setLevel(logging.WARNING)
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+    logging.WARNING
+)
 
 celery_app = Celery(
     "cmp_core",
@@ -9,6 +16,7 @@ celery_app = Celery(
     include=[  # ← explicitly include your task module
         "cmp_core.tasks.pulumi",
         "cmp_core.tasks.azure",
+        "cmp_core.tasks.ec2",
     ],
 )
 
@@ -22,8 +30,8 @@ celery_app.conf.update(
 
 celery_app.conf.beat_schedule = {
     # run reconciliation for all projects every 5 minutes
-    "reconcile-all-projects-every-5min": {
+    "reconcile-all-projects-every-2min": {
         "task": "cmp_core.tasks.reconcile_all_projects",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/2"),
     },
 }
