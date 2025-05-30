@@ -7,6 +7,7 @@ from cmp_core.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from cmp_core.services.project import (
     create_project,
     delete_project,
+    get_project_by_id,
     list_projects_with_count,
     update_project,
 )
@@ -36,6 +37,16 @@ async def create_new_project(
     db: AsyncSession = Depends(get_db),
 ):
     return await create_project(db, user.id, data)
+
+
+@router.get("/{project_id}", response_model=ProjectOut)
+async def api_get_project(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    project = await get_project_by_id(db, project_id)
+    return project
 
 
 @router.patch(

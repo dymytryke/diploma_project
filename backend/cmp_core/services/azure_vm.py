@@ -114,7 +114,7 @@ async def create_azure_nonblocking(
 
     res_id = uuid.uuid4()
     initial_meta: Dict[str, Any] = {  # Explicitly type initial_meta
-        "location": dto.location
+        "location": dto.region
         or "",  # This will be used for AzureOut.region via Resource.region
         "vnet_address_prefix": dto.vnet_address_prefix,
         "subnet_prefix": dto.subnet_prefix,
@@ -131,7 +131,7 @@ async def create_azure_nonblocking(
         provider=Provider.azure,
         resource_type=ResourceType.vm,
         name=dto.name,
-        region=dto.location or "",
+        region=dto.region or "",
         state=ResourceState.PENDING_PROVISION,  # Use new state
         meta=initial_meta,
         created_by=user_id,

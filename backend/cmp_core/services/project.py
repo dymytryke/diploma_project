@@ -90,3 +90,17 @@ async def delete_project(db: AsyncSession, project_id: UUID, user_id: UUID):
     # asynchronously destroy all infra for that project
     destroy_project_task.delay(str(project_id))
     await db.commit()
+
+
+async def get_project_by_id(db: AsyncSession, project_id: UUID) -> Project:
+    """
+    Retrieve a project by its ID.
+    """
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project with id {project_id} not found",
+        )
+    return project

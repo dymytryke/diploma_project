@@ -14,7 +14,7 @@ class AzureCreate(BaseModel):
     admin_password: str
 
     # Параметри для автоматичної мережі
-    location: str | None = Field(None, description="Azure region (e.g. eastus)")
+    region: str | None = Field(None, description="Azure region (e.g. eastus)")
     vnet_address_prefix: str | None = Field(
         "10.0.0.0/16", description="VNet address space"
     )
@@ -34,7 +34,7 @@ class AzureUpdate(BaseModel):
 
 
 class AzureOut(BaseModel):
-    id: str  # Assuming this is the Resource.id converted to string
+    id: str
     name: str
     region: str
     status: ResourceState  # Or str if you prefer to pass the value

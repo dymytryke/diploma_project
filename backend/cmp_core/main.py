@@ -13,10 +13,25 @@ from cmp_core.models.role import RoleName
 from cmp_core.models.user import User
 from cmp_core.services.auth import hash_password
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
+origins = [
+    "http://localhost:5173",  # Your Vue frontend development server
+    "http://127.0.0.1:5173",  # Also common for local dev
+    # Add other origins if needed, e.g., your deployed frontend URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows specific origins
+    # allow_origins=["*"], # Alternatively, allow all origins (less secure, use with caution)
+    allow_credentials=True,  # Allows cookies to be included in requests
+    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, OPTIONS, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 app.include_router(auth_router)
 app.include_router(users_router)
