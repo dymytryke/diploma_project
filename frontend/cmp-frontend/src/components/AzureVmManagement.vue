@@ -113,24 +113,9 @@
     <!-- Add Azure VM Modal -->
     <Teleport to="body">
       <div v-if="showAddAzureVmModal"
-           style="position: fixed !important;
-                  inset: 0px !important;
-                  background-color: rgba(75, 85, 99, 0.5) !important; /* bg-gray-600 bg-opacity-50 */
-                  z-index: 50 !important; 
-                  display: flex !important;
-                  align-items: center !important;
-                  justify-content: center !important;
-                  opacity: 1 !important;
-                  visibility: visible !important;
-                  overflow-y: auto !important; 
-                  height: 100% !important; 
-                  width: 100% !important;"
-           class=""
-      >
-        <div 
-          class="relative mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md" 
-          style="background-color: white !important;"
-        >
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full">
+        <div
+          class="relative mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white"> 
           <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">Add New Azure Virtual Machine</h3>
           <form @submit.prevent="submitAddAzureVm" class="space-y-4 max-h-[80vh] overflow-y-auto px-2">
             <div v-if="azureVmModalError" class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
@@ -224,25 +209,10 @@
     
     <!-- Edit Azure VM Modal -->
      <Teleport to="body">
-      <div v-if="showEditAzureVmModal"  
-           style="position: fixed !important;
-                  inset: 0px !important;
-                  background-color: rgba(75, 85, 99, 0.5) !important;
-                  z-index: 50 !important;
-                  display: flex !important;
-                  align-items: center !important;
-                  justify-content: center !important;
-                  opacity: 1 !important;
-                  visibility: visible !important;
-                  overflow-y: auto !important;
-                  height: 100% !important;
-                  width: 100% !important;"
-           class=""
-      >
-        <div 
-          class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md"
-          style="background-color: white !important;" 
-        >
+      <div v-if="showEditAzureVmModal"
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full"> 
+        <div
+          class="relative mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white"> 
           <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">Edit Azure VM: {{ editingAzureVm?.name }}</h3>
           <form @submit.prevent="submitEditAzureVm" class="space-y-4">
             <div v-if="azureVmModalError" class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
@@ -278,24 +248,9 @@
     <!-- Delete Azure VM Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteAzureVmModal"
-           style="position: fixed !important;
-                  inset: 0px !important;
-                  background-color: rgba(75, 85, 99, 0.5) !important;
-                  z-index: 50 !important; 
-                  display: flex !important;
-                  align-items: center !important;
-                  justify-content: center !important;
-                  opacity: 1 !important;
-                  visibility: visible !important;
-                  overflow-y: auto !important; 
-                  height: 100% !important; 
-                  width: 100% !important;"
-           class=""
-      >
-        <div 
-          class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md"
-          style="background-color: white !important;"
-        >
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full"> 
+        <div
+          class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white"> 
           <h3 class="text-lg font-medium leading-6 text-gray-900 text-center">Delete Azure VM</h3>
           <div class="mt-2 px-7 py-3">
             <p class="text-sm text-gray-600">

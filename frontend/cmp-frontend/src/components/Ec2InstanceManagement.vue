@@ -117,8 +117,7 @@
     <!-- Add EC2 Instance Modal -->
     <Teleport to="body">
       <div v-if="showAddEc2Modal"
-           style="position: fixed !important; inset: 0px !important; background-color: rgba(75, 85, 99, 0.5) !important; z-index: 2147483647 !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 1 !important; visibility: visible !important;"
-           class="">
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"> 
         <div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Add New EC2 Instance</h3>
@@ -168,8 +167,7 @@
     <!-- Edit EC2 Instance Modal -->
     <Teleport to="body">
       <div v-if="showEditEc2Modal"
-           style="position: fixed !important; inset: 0px !important; background-color: rgba(75, 85, 99, 0.5) !important; z-index: 2147483647 !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 1 !important; visibility: visible !important;"
-           class="">
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Edit EC2 Instance: {{ editingEc2Instance?.name }}</h3>
@@ -207,8 +205,7 @@
     <!-- Delete EC2 Instance Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteEc2Modal"
-           style="position: fixed !important; inset: 0px !important; background-color: rgba(75, 85, 99, 0.5) !important; z-index: 2147483647 !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 1 !important; visibility: visible !important;"
-           class="">
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Delete EC2 Instance</h3>
