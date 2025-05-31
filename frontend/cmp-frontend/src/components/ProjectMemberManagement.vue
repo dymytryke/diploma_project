@@ -94,8 +94,7 @@
               <label for="newMemberRole" class="block text-sm font-medium text-gray-700">Role</label>
               <select id="newMemberRole" v-model="newMember.role_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                 <option value="viewer">Viewer</option>
-                <option value="editor">Editor</option>
-                <option value="manager">Manager</option>
+                <option value="devops">DevOps</option>
               </select>
             </div>
             <div class="flex justify-end space-x-3 pt-4">
@@ -141,8 +140,7 @@
               <label for="editMemberRole" class="block text-sm font-medium text-gray-700">New Role</label>
               <select id="editMemberRole" v-model="editingMember.role_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                 <option value="viewer">Viewer</option>
-                <option value="editor">Editor</option>
-                <option value="manager">Manager</option>
+                <option value="devops">DevOps</option>
               </select>
             </div>
             <div class="flex justify-end space-x-3 pt-4">
