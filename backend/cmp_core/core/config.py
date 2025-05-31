@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     grafana_dashboard_uids: Mapping[str, str] = Field(..., env="GRAFANA_DASHBOARD_UIDS")
     grafana_kiosk: bool = Field(True, env="GRAFANA_KIOSK")
 
+    # CORS settings
+    cors_origins: list[str] | None = Field(
+        None, env="CORS_ORIGINS"
+    )  # List of allowed origins for CORS
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

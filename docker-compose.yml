@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-cmp}
       POSTGRES_PASSWORD: ${DB_PASS:-cmp}
-      POSTGRES_DB: ${DB_NAME:-cmp_dev} # Matches DATABASE_URL in .env
+      POSTGRES_DB: ${DB_NAME:-cmp_dev}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -73,7 +73,7 @@ services:
       - ./backend:/app
       - pulumi_state_data:/pulumi_state # Mount the volume for Pulumi state
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     env_file:
       - ./.env
     environment:
@@ -84,7 +84,10 @@ services:
       ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
       ARM_TENANT_ID: ${AZURE_TENANT_ID}
       ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
-      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend at this path
+      PULUMI_BACKEND_URL: file:///pulumi_state
+      GRAFANA_BASE_URL: http://localhost:3000
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://localhost"]}
+
     depends_on:
       db:
         condition: service_healthy
@@ -108,11 +111,13 @@ services:
       DATABASE_URL: postgresql+asyncpg://${DB_USER:-cmp}:${DB_PASS:-cmp}@db:${DB_PORT:-5432}/${DB_NAME:-cmp_dev}
       CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:${RABBITMQ_PORT:-5672}//
       REDIS_CACHE_URL: redis://redis:${REDIS_PORT:-6379}/0
+      CELERY_RESULT_BACKEND: rpc://
       ARM_CLIENT_ID: ${AZURE_CLIENT_ID}
       ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
       ARM_TENANT_ID: ${AZURE_TENANT_ID}
       ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
-      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend
+      PULUMI_BACKEND_URL: file:///pulumi_state
+      GRAFANA_BASE_URL: http://localhost:3000
     depends_on:
       api:
         condition: service_started
@@ -140,7 +145,8 @@ services:
       ARM_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
       ARM_TENANT_ID: ${AZURE_TENANT_ID}
       ARM_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID}
-      PULUMI_BACKEND_URL: file:///pulumi_state # Tell Pulumi to use local backend
+      PULUMI_BACKEND_URL: file:///pulumi_state
+      GRAFANA_BASE_URL: http://localhost:3000
     depends_on:
       api:
         condition: service_started
@@ -153,4 +159,4 @@ services:
 volumes:
   postgres_data:
   grafana_data:
-  pulumi_state_data: {} # Define the named volume for Pulumi state
+  pulumi_state_data: {}

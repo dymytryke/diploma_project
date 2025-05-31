@@ -18,10 +18,8 @@ from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
-origins = [
-    "http://localhost:5173",  # Your Vue frontend development server
-    "http://127.0.0.1:5173",  # Also common for local dev
-    # Add other origins if needed, e.g., your deployed frontend URL
+origins = settings.cors_origins or [
+    "http://localhost:5137",
 ]
 
 app.add_middleware(

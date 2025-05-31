@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import router from '@/router';
 import apiService from '@/services/api';
 
-const AUTH_API_ROOT = 'http://localhost:8000'; // Assuming this is still correct for /auth/token and /auth/signup
+const AUTH_API_ROOT = import.meta.env.VITE_API_AUTH_BASE_URL || 'http://localhost:8000';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -30,8 +30,6 @@ export const useAuthStore = defineStore('auth', {
     async fetchCurrentUser() {
       if (this.token) {
         try {
-          // API_BASE_URL in api.js is http://localhost:8000/
-          // So this call will go to http://localhost:8000/users/me
           const response = await apiService.get('/users/me');
           this.user = response.data; // Store the full user object
           localStorage.setItem('user', JSON.stringify(this.user));
