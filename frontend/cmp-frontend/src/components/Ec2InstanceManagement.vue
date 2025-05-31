@@ -1,5 +1,6 @@
 <template>
   <div class="mt-10 pt-6 border-t">
+    <!-- ... existing code for title and buttons ... -->
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-semibold text-gray-700">AWS EC2 Instances</h2>
       <div class="space-x-2">
@@ -66,10 +67,10 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
               <button
                 v-if="canViewDashboard(instance) && canManageEc2"
-                @click="openGrafanaDashboard(instance)"
+                @click="openIntegratedDashboardEc2(instance)"
                 :disabled="isProcessingActionEc2InstanceId === instance.name"
                 class="text-blue-600 hover:text-blue-900 disabled:text-gray-400"
-                title="View Dashboard"
+                title="View Integrated Dashboard"
               >
                 Dashboard
               </button>
@@ -231,6 +232,34 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Integrated Dashboard Modal for EC2 -->
+    <Teleport to="body">
+      <div v-if="showDashboardModalEc2"
+           class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full h-[90vh] max-w-6xl flex flex-col">
+          <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-medium text-gray-900">EC2 Instance Dashboard</h3>
+            <button @click="closeDashboardModalEc2" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="flex-grow p-1 overflow-hidden">
+            <iframe
+              v-if="dashboardModalUrlEc2"
+              :src="dashboardModalUrlEc2"
+              class="w-full h-full border-0"
+              allowfullscreen
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups" 
+            ></iframe>
+            <div v-else class="flex items-center justify-center h-full text-gray-500">
+              Loading dashboard...
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -289,6 +318,10 @@ const ec2ActionError = ref(null); // For errors specific to start/stop actions
 const showEditEc2Modal = ref(false);
 const editingEc2Instance = ref(null); // For the EC2 instance being edited
 const originalEditingEc2InstanceType = ref(''); // To show the original type in the modal
+
+// --- Integrated Dashboard Modal State ---
+const showDashboardModalEc2 = ref(false);
+const dashboardModalUrlEc2 = ref('');
 
 
 async function fetchEc2Instances() {
@@ -493,15 +526,23 @@ function getStatusClass(status) {
 
 
 // --- Grafana Dashboard ---
-function openGrafanaDashboard(instance) {
+function openIntegratedDashboardEc2(instance) {
   const url = instance.dashboard_url;
-  console.log('Attempting to open Grafana dashboard. Instance:', instance, 'URL:', url);
+  console.log('Attempting to open EC2 integrated Grafana dashboard. Instance:', instance, 'URL:', url);
   if (url) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    dashboardModalUrlEc2.value = url;
+    showDashboardModalEc2.value = true;
   } else {
-    console.warn('Grafana dashboard URL not found for this instance:', instance.name);
-    alert('Dashboard URL is not available for this instance.');
+    console.warn('Grafana dashboard URL not found for this EC2 instance:', instance.name);
+    // Optionally, show a small notification or use ec2ModalError
+    ec2ModalError.value = { message: `Dashboard URL is not available for instance ${instance.name}.` };
+    // Consider adding a small, dismissible alert component for such messages if ec2ModalError is too intrusive
   }
+}
+
+function closeDashboardModalEc2() {
+  showDashboardModalEc2.value = false;
+  dashboardModalUrlEc2.value = ''; // Clear URL to ensure iframe reloads if opened again
 }
 
 onMounted(() => {

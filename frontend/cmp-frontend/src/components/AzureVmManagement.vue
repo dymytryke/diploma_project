@@ -65,7 +65,7 @@
                 @click="openGrafanaDashboard(vm)"
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-blue-600 hover:text-blue-900 disabled:text-gray-400"
-                title="View Dashboard"
+                title="View Integrated Dashboard"
               >
                 Dashboard
               </button>
@@ -273,6 +273,34 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Integrated Dashboard Modal for Azure VM -->
+    <Teleport to="body">
+      <div v-if="showDashboardModalAzure"
+           class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full h-[90vh] max-w-6xl flex flex-col">
+          <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-medium text-gray-900">Azure VM Dashboard</h3>
+            <button @click="closeDashboardModalAzure" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="flex-grow p-1 overflow-hidden">
+            <iframe
+              v-if="dashboardModalUrlAzure"
+              :src="dashboardModalUrlAzure"
+              class="w-full h-full border-0"
+              allowfullscreen
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            ></iframe>
+            <div v-else class="flex items-center justify-center h-full text-gray-500">
+              Loading dashboard...
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -349,6 +377,10 @@ const azureVmToDelete = ref(null);
 const isProcessingActionAzureVmId = ref(null); // Stores the name of the VM being acted upon
 const azureVmActionInProgress = ref(''); // e.g., 'starting', 'stopping'
 // const azureVmActionError = ref(null); // For errors specific to start/stop actions (can use azureVmModalError if preferred)
+
+// --- Integrated Dashboard Modal State ---
+const showDashboardModalAzure = ref(false);
+const dashboardModalUrlAzure = ref('');
 
 
 async function fetchAzureVms() {
@@ -572,14 +604,21 @@ function getStatusClass(status) {
   return 'bg-blue-100 text-blue-800'; // Default for unknown or other transient states
 }
 
-function openGrafanaDashboard(vm) {
+function openGrafanaDashboard(vm) { 
   const url = vm.dashboard_url;
+  console.log('Attempting to open Azure VM integrated Grafana dashboard. VM:', vm, 'URL:', url);
   if (url) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    dashboardModalUrlAzure.value = url;
+    showDashboardModalAzure.value = true;
   } else {
     console.warn('Grafana dashboard URL not found for this Azure VM:', vm.name);
-    alert('Dashboard URL is not available for this VM.');
+    azureVmModalError.value = { message: `Dashboard URL is not available for VM ${vm.name}.` };
   }
+}
+
+function closeDashboardModalAzure() {
+  showDashboardModalAzure.value = false;
+  dashboardModalUrlAzure.value = ''; // Clear URL
 }
 
 onMounted(() => {
