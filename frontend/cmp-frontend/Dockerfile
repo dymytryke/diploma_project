@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
 
+ARG VITE_API_BASE_URL="http://localhost/api/v1"
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 # Install dependencies
 RUN npm install
 

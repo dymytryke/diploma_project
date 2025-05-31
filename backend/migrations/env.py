@@ -3,12 +3,9 @@ from logging.config import fileConfig
 from alembic import context
 from cmp_core.core.db import settings
 from cmp_core.models.base import Base
-from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-load_dotenv(".env", override=True)
 
 # 1. Ensure URL is properly configured
 config = context.config

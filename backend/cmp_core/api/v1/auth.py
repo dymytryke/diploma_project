@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter(tags=["auth"], prefix="/auth")
+router = APIRouter(tags=["auth"])
 
 
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)

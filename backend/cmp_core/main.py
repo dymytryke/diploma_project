@@ -12,32 +12,38 @@ from cmp_core.core.db import get_db
 from cmp_core.models.role import RoleName
 from cmp_core.models.user import User
 from cmp_core.services.auth import hash_password
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI  # Import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 app = FastAPI(title="CMP")
 
 origins = settings.cors_origins or [
-    "http://localhost:5137",
+    "http://localhost:5137",  # Ensure this matches your frontend dev port if needed
+    "http://localhost",  # For access via Nginx ingress
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allows specific origins
-    # allow_origins=["*"], # Alternatively, allow all origins (less secure, use with caution)
-    allow_credentials=True,  # Allows cookies to be included in requests
-    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, OPTIONS, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(users_router)
-app.include_router(projects_router)
-app.include_router(members_router)
-app.include_router(ec2_router)
-app.include_router(audit_router)
-app.include_router(azure_vm_router)
+
+api_v1_router = APIRouter(prefix="/api/v1")
+
+api_v1_router.include_router(auth_router)
+api_v1_router.include_router(users_router)
+api_v1_router.include_router(projects_router)
+api_v1_router.include_router(members_router)
+api_v1_router.include_router(ec2_router)
+api_v1_router.include_router(audit_router)
+api_v1_router.include_router(azure_vm_router)
+
+# Register the main /api/v1 router with the app
+app.include_router(api_v1_router)
 
 
 @app.on_event("startup")

@@ -1,13 +1,12 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12-slim as base
+FROM python:3.12-slim AS base
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV POETRY_VERSION=1.8.3
 ENV POETRY_HOME="/opt/poetry"
 ENV POETRY_VIRTUALENVS_CREATE=false
-# Add Pulumi's bin directory to PATH. $HOME is /root for the default root user.
 ENV PATH="/root/.pulumi/bin:$POETRY_HOME/bin:$PATH"
 
 # Install system dependencies

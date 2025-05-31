@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import router from '@/router';
 import apiService from '@/services/api';
 
-const AUTH_API_ROOT = import.meta.env.VITE_API_AUTH_BASE_URL || 'http://localhost:8000';
+const AUTH_API_ROOT = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
         params.append('password', credentials.password);
         params.append('grant_type', 'password');
 
-        const response = await apiService.post(`${AUTH_API_ROOT}/auth/token`, params, {
+        const response = await apiService.post(`${AUTH_API_ROOT}/token`, params, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
 
@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', {
     async signup(credentials) {
       this.signupError = null;
       try {
-        const response = await apiService.post(`${AUTH_API_ROOT}/auth/signup`, {
+        const response = await apiService.post(`${AUTH_API_ROOT}/signup`, {
           email: credentials.email,
           password: credentials.password,
         });
