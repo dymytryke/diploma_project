@@ -70,7 +70,14 @@
     "creating": "Створення...",
     "create": "Створити",
     "saveChanges": "Зберегти зміни",
-    "refreshList": "Оновити список"
+    "refreshList": "Оновити список",
+    "previous": "Попередня",
+    "next": "Наступна",
+    "paginationSummary": "Сторінка {page} з {totalPages} (всього {total} подій)",
+    "clearFilters": "Очистити фільтри",
+    "viewDetails": "Деталі",
+    "close": "Закрити",
+    "applying": "Застосування..."
   },
   "app": {
     "openMainMenu": "Відкрити головне меню",
@@ -161,7 +168,8 @@
     "tableHeaderObjectId": "ID об'єкта",
     "tableHeaderProjectId": "ID проекту",
     "tableHeaderDetails": "Деталі",
-    "noEventsFound": "Подій аудиту, що відповідають вашим критеріям, не знайдено."
+    "noEventsFound": "Подій аудиту, що відповідають вашим критеріям, не знайдено.",
+    "detailsModalTitle": "Деталі події"
   },
   "azureVmManagement": {
     "title": "Віртуальні машини Azure",

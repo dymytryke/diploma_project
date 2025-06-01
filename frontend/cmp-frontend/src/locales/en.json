@@ -70,7 +70,14 @@
     "creating": "Creating...",
     "create": "Create",
     "saveChanges": "Save Changes",
-    "refreshList": "Refresh List"
+    "refreshList": "Refresh List",
+    "previous": "Previous",
+    "next": "Next",
+    "paginationSummary": "Page {page} of {totalPages} ({total} total events)",
+    "clearFilters": "Clear Filters",
+    "viewDetails": "View Details",
+    "close": "Close",
+    "applying": "Applying..."
   },
   "app": {
     "openMainMenu": "Open main menu",
@@ -161,7 +168,8 @@
     "tableHeaderObjectId": "Object ID",
     "tableHeaderProjectId": "Project ID",
     "tableHeaderDetails": "Details",
-    "noEventsFound": "No audit events found matching your criteria."
+    "noEventsFound": "No audit events found matching your criteria.",
+    "detailsModalTitle": "Event Details"
   },
   "azureVmManagement": {
     "title": "Azure Virtual Machines",

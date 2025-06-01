@@ -28,12 +28,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
     restart: unless-stopped
     networks:
       - cmp_network
@@ -91,8 +85,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -119,8 +111,6 @@ services:
     depends_on:
       api:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -147,8 +137,6 @@ services:
     depends_on:
       api:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
