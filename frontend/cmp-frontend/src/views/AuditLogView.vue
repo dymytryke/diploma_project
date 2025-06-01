@@ -8,15 +8,25 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label for="filterProject" class="block text-sm font-medium text-gray-700">{{ $t('auditLogView.filterProjectIdLabel') }}</label>
-          <input type="text" id="filterProject" v-model="filters.project_id" @keyup.enter="applyFiltersAndResetPage"
-                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                 :placeholder="$t('auditLogView.filterProjectPlaceholder')">
+          <select id="filterProject" v-model="filters.project_id" @change="applyFiltersAndResetPage"
+                  :disabled="isLoadingFilterOptions"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <option v-if="isLoadingFilterOptions" value="" disabled>{{ $t('common.loading') }}</option>
+            <option v-for="option in projectOptions" :key="option.id" :value="option.id">
+              {{ option.name }}
+            </option>
+          </select>
         </div>
         <div>
           <label for="filterUser" class="block text-sm font-medium text-gray-700">{{ $t('auditLogView.filterUserIdLabel') }}</label>
-          <input type="text" id="filterUser" v-model="filters.user_id" @keyup.enter="applyFiltersAndResetPage"
-                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                 :placeholder="$t('auditLogView.filterUserPlaceholder')">
+          <select id="filterUser" v-model="filters.user_id" @change="applyFiltersAndResetPage"
+                  :disabled="isLoadingFilterOptions"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <option v-if="isLoadingFilterOptions" value="" disabled>{{ $t('common.loading') }}</option>
+            <option v-for="option in userOptions" :key="option.id" :value="option.id">
+              {{ option.email }}
+            </option>
+          </select>
         </div>
         <div>
           <label for="filterAction" class="block text-sm font-medium text-gray-700">{{ $t('auditLogView.filterActionLabel') }}</label>
@@ -144,15 +154,20 @@ const isLoading = ref(false);
 const applyingFilters = ref(false);
 const error = ref(null);
 
+// Filter options
+const projectOptions = ref([]);
+const userOptions = ref([]);
+const isLoadingFilterOptions = ref(false); // For loading state of filter dropdowns
+
 const filters = reactive({
-  project_id: '', // Renamed to match API query param alias
-  user_id: '',    // Renamed to match API query param alias
+  project_id: '',
+  user_id: '',
   action: ''
 });
 
 // Pagination state
 const currentPage = ref(1);
-const pageSize = ref(20); // Default page size, should match backend
+const pageSize = ref(20);
 const totalEvents = ref(0);
 const totalPages = ref(0);
 
@@ -164,6 +179,32 @@ const router = useRouter();
 
 const canGoPrevious = computed(() => currentPage.value > 1);
 const canGoNext = computed(() => currentPage.value < totalPages.value);
+
+async function fetchProjectFilterOptions() {
+  try {
+    const response = await apiService.get('/projects');
+    projectOptions.value = [
+      { id: '', name: t('auditLogView.filterProjectAll') },
+      ...response.data.map(project => ({ id: project.id, name: project.name || project.id }))
+    ];
+  } catch (err) {
+    console.error('Failed to fetch project filter options:', err);
+    projectOptions.value = [{ id: '', name: t('auditLogView.filterProjectAll') }];
+  }
+}
+
+async function fetchUserFilterOptions() {
+  try {
+    const response = await apiService.get('/users');
+    userOptions.value = [
+      { id: '', email: t('auditLogView.filterUserAll') }, // "All Users" option
+      ...response.data.map(user => ({ id: user.id, email: user.email || user.id }))
+    ];
+  } catch (err) {
+    console.error('Failed to fetch user filter options:', err);
+    userOptions.value = [{ id: '', email: t('auditLogView.filterUserAll') }];
+  }
+}
 
 async function fetchAuditEvents(isFilterAction = false) {
   isLoading.value = true;
@@ -180,19 +221,17 @@ async function fetchAuditEvents(isFilterAction = false) {
     if (filters.user_id) queryParams.user_id = filters.user_id;
     if (filters.action) queryParams.action = filters.action;
 
-    // Pass queryParams as { params: queryParams } for GET requests with axios
     const response = await apiService.get('/audit', { params: queryParams });
     
     auditEvents.value = response.data.items;
     totalEvents.value = response.data.total;
     totalPages.value = response.data.pages;
-    currentPage.value = response.data.page; // API returns current page
-    pageSize.value = response.data.size;   // API returns current size
+    currentPage.value = response.data.page;
+    pageSize.value = response.data.size;
     
   } catch (err) {
     console.error('Failed to fetch audit events:', err);
     error.value = err.response?.data || err;
-    // Reset if error occurs, or handle more gracefully
     auditEvents.value = [];
     totalEvents.value = 0;
     totalPages.value = 0;
@@ -203,7 +242,7 @@ async function fetchAuditEvents(isFilterAction = false) {
 }
 
 function applyFiltersAndResetPage() {
-  currentPage.value = 1; // Reset to first page when filters change
+  currentPage.value = 1;
   fetchAuditEvents(true);
 }
 
@@ -211,7 +250,7 @@ function clearFiltersAndResetPage() {
   filters.project_id = '';
   filters.user_id = '';
   filters.action = '';
-  currentPage.value = 1; // Reset to first page
+  currentPage.value = 1;
   fetchAuditEvents(true);
 }
 
@@ -219,10 +258,10 @@ function goToPage(pageNumber) {
   if (pageNumber >= 1 && pageNumber <= totalPages.value && pageNumber !== currentPage.value) {
     currentPage.value = pageNumber;
     fetchAuditEvents();
-  } else if (pageNumber < 1 && totalPages.value > 0) { // Handle edge case if trying to go before first page
+  } else if (pageNumber < 1 && totalPages.value > 0) {
     currentPage.value = 1;
     fetchAuditEvents();
-  } else if (pageNumber > totalPages.value && totalPages.value > 0) { // Handle edge case if trying to go after last page
+  } else if (pageNumber > totalPages.value && totalPages.value > 0) {
     currentPage.value = totalPages.value;
     fetchAuditEvents();
   }
@@ -231,9 +270,7 @@ function goToPage(pageNumber) {
 function formatTimestamp(timestamp) {
   if (!timestamp) return t('common.notAvailable');
   try {
-    // Example using vue-i18n's date formatting (ensure 'short' is defined in your i18n config)
-    // return d(new Date(timestamp), 'short'); 
-    return new Date(timestamp).toLocaleString(); // Fallback
+    return new Date(timestamp).toLocaleString();
   } catch (e) {
     return timestamp;
   }
@@ -255,12 +292,23 @@ function closeDetailsModal() {
   selectedEventDetails.value = null;
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!authStore.isAdmin) {
     router.push({ name: 'home' });
     return;
   }
-  fetchAuditEvents();
+  isLoadingFilterOptions.value = true;
+  try {
+    await Promise.all([
+      fetchProjectFilterOptions(),
+      fetchUserFilterOptions(),
+    ]);
+  } catch (err) {
+    console.error("Error loading initial filter data", err);
+  } finally {
+    isLoadingFilterOptions.value = false;
+  }
+  fetchAuditEvents(); // Fetch audit events after filter options are loaded or attempted
 });
 </script>
 
