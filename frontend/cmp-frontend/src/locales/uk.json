@@ -85,7 +85,7 @@
   },
   "signup": {
     "title": "Реєстрація",
-    "emailPlaceholder": "your@email.com",
+    "emailPlaceholder": "your%{'@'}email.com",
     "passwordLabel": "Пароль",
     "confirmPasswordLabel": "Підтвердіть пароль",
     "passwordPlaceholder": "******************",
@@ -228,7 +228,7 @@
     },
     "deleteModal": {
       "title": "Видалити Azure VM",
-      "confirmationText": "Ви впевнені, що хочете видалити Azure VM <strong class=\"text-gray-800\">{name}</strong>? Ця дія спробує її деактивувати.",
+      "confirmationText": "Ви впевнені, що хочете видалити Azure VM {name}? Ця дія спробує її деактивувати.",
       "deleteButton": "Видалити VM"
     },
     "dashboardModal": {
@@ -281,7 +281,7 @@
     },
     "deleteModal": {
       "title": "Видалити екземпляр EC2",
-      "confirmationText": "Ви впевнені, що хочете видалити екземпляр EC2 <strong class=\"text-gray-800\">{name}</strong> (AWS ID: {awsId})? Ця дія спробує його деактивувати.",
+      "confirmationText": "Ви впевнені, що хочете видалити екземпляр EC2 {name} (AWS ID: {awsId})? Ця дія спробує його деактивувати.",
       "deleteButton": "Видалити екземпляр"
     },
     "dashboardModal": {
@@ -318,7 +318,7 @@
     },
     "deleteModal": {
       "title": "Видалити учасника проекту",
-      "confirmationText": "Ви впевнені, що хочете видалити <strong class=\"text-gray-800\">{user}</strong> з цього проекту?",
+      "confirmationText": "Ви впевнені, що хочете видалити {user} з цього проекту?",
       "removingButton": "Видалення...",
       "removeMemberButtonText": "Видалити учасника"
     }

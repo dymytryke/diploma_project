@@ -101,7 +101,7 @@ function switchLocale(newLocale) {
         <div class="px-2 pt-2 pb-3 space-y-1">
           <router-link v-if="isLoggedIn" to="/projects" @click="isMobileMenuOpen = false" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">{{ t('navigation.projects') }}</router-link>
           <router-link v-if="isLoggedIn && isAdmin" to="/users" @click="isMobileMenuOpen = false" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">{{ t('navigation.users') }}</router-link>
-          <router-link v-if="isLoggedIn && isAdmin" to="/audit" @click="isMobileMenuOpen = false" class="block px-3 py-2 rounded-md textbase font-medium text-gray-300 hover:bg-gray-700 hover:text-white">{{ t('navigation.auditLog') }}</router-link>
+          <router-link v-if="isLoggedIn && isAdmin" to="/audit" @click="isMobileMenuOpen = false" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">{{ t('navigation.auditLog') }}</router-link>
            <!-- Language Switcher - Mobile -->
           <div class="px-3 py-2">
             <select :value="locale" @change="switchLocale($event.target.value)" class="bg-gray-700 text-white py-1 px-2 rounded text-sm w-full appearance-none focus:outline-none focus:ring-1 focus:ring-gray-500 cursor-pointer">

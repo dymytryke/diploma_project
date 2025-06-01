@@ -85,7 +85,7 @@
   },
   "signup": {
     "title": "Sign Up",
-    "emailPlaceholder": "your@email.com",
+    "emailPlaceholder": "your%{'@'}email.com",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Confirm Password",
     "passwordPlaceholder": "******************",
@@ -228,7 +228,7 @@
     },
     "deleteModal": {
       "title": "Delete Azure VM",
-      "confirmationText": "Are you sure you want to delete Azure VM <strong class=\"text-gray-800\">{name}</strong>? This action will attempt to deprovision it.",
+      "confirmationText": "Are you sure you want to delete Azure VM {name}? This action will attempt to deprovision it.",
       "deleteButton": "Delete VM"
     },
     "dashboardModal": {
@@ -281,7 +281,7 @@
     },
     "deleteModal": {
       "title": "Delete EC2 Instance",
-      "confirmationText": "Are you sure you want to delete EC2 instance <strong class=\"text-gray-800\">{name}</strong> (AWS ID: {awsId})? This action will attempt to deprovision it.",
+      "confirmationText": "Are you sure you want to delete EC2 instance {name} (AWS ID: {awsId})? This action will attempt to deprovision it.",
       "deleteButton": "Delete Instance"
     },
     "dashboardModal": {
@@ -318,7 +318,7 @@
     },
     "deleteModal": {
       "title": "Remove Project Member",
-      "confirmationText": "Are you sure you want to remove <strong class=\"text-gray-800\">{user}</strong> from this project?",
+      "confirmationText": "Are you sure you want to remove {user} from this project?",
       "removingButton": "Removing...",
       "removeMemberButtonText": "Remove Member"
     }
