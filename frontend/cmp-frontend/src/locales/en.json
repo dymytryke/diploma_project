@@ -1,0 +1,318 @@
+{
+  "login": {
+    "title": "Login",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Username",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "******************",
+    "signInButton": "Sign In",
+    "signingInButton": "Signing In...",
+    "signupLink": "Don't have an account? Sign Up",
+    "usernamePasswordRequired": "Username and password are required."
+  },
+  "navigation": {
+    "dashboard": "CMP Dashboard",
+    "projects": "Projects",
+    "users": "Users",
+    "auditLog": "Audit Log",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+  "usersView": {
+    "title": "User Management",
+    "loadingUsers": "Loading users...",
+    "errorLoadingUsers": "Error loading users",
+    "userId": "User ID",
+    "createdAt": "Created At",
+    "editRoleTitle": "Edit Role",
+    "editRoleButton": "Edit Role",
+    "deleteUserTitle": "Delete User",
+    "noUsersFound": "No users found.",
+    "editUserRoleModalTitle": "Edit User Role",
+    "userLabel": "User",
+    "saveRoleButton": "Save Role",
+    "deleteUserModalTitle": "Delete User",
+    "deleteUserConfirmation": "Are you sure you want to delete user {email}? This action cannot be undone.",
+    "deleteUserButton": "Delete User",
+    "roleIsRequiredError": "Role is required."
+  },
+  "roles": {
+    "viewer": "Viewer",
+    "devops": "DevOps",
+    "admin": "Admin"
+  },
+  "common": {
+    "welcome": "Welcome",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "refresh": "Refresh",
+    "status": "Status",
+    "actions": "Actions",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "error": "Error",
+    "success": "Success",
+    "couldNotProcessRequest": "Could not process request.",
+    "serverErrorPrefix": "Server",
+    "unknownError": "Unknown error",
+    "retry": "Retry",
+    "notAvailable": "N/A",
+    "view": "View",
+    "errorPrefix": "Error",
+    "creating": "Creating...",
+    "create": "Create",
+    "saveChanges": "Save Changes",
+    "refreshList": "Refresh List"
+  },
+  "app": {
+    "openMainMenu": "Open main menu",
+    "allRightsReserved": "All rights reserved."
+  },
+  "signup": {
+    "title": "Sign Up",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "passwordPlaceholder": "******************",
+    "passwordsDoNotMatch": "Passwords do not match.",
+    "creatingAccount": "Creating Account...",
+    "signUpButton": "Sign Up",
+    "loginLink": "Already have an account? Login",
+    "emailAndPasswordRequired": "Email and password are required.",
+    "signupSuccessRedirecting": "Signup successful! Redirecting...",
+    "signupFailed": "Signup failed. Please try again."
+  },
+  "projectsView": {
+    "title": "Projects",
+    "createNewProjectButton": "Create New Project",
+    "loadingProjects": "Loading projects...",
+    "errorLoadingProjects": "Error loading projects",
+    "idLabel": "ID",
+    "ownerIdLabel": "Owner ID",
+    "createdLabel": "Created",
+    "totalResourcesLabel": "Total Resources",
+    "noProjectsFound": "No projects found. Start by creating a new one!",
+    "createModalTitle": "Create New Project",
+    "couldNotCreateProject": "Could not create project.",
+    "projectNameLabel": "Project Name",
+    "projectNamePlaceholder": "My Awesome Project",
+    "editModalTitle": "Edit Project",
+    "couldNotUpdateProject": "Could not update project.",
+    "newProjectNameLabel": "New Project Name",
+    "updatedProjectNamePlaceholder": "Updated Project Name",
+    "deleteModalTitle": "Delete Project",
+    "deleteConfirmationText": "Are you sure you want to delete the project \"{projectName}\"? This action cannot be undone.",
+    "couldNotDeleteProject": "Could not delete project.",
+    "deleteProjectButton": "Delete Project",
+    "projectNameEmptyError": "Project name cannot be empty."
+  },
+  "projectDetailView": {
+    "loadingDetails": "Loading project details...",
+    "errorLoadingProject": "Error loading project",
+    "backToProjects": "Back to Projects",
+    "projectNotFound": "Project not found."
+  },
+  "homeView": {
+    "welcomeBack": "Welcome back, {email}!",
+    "welcomeGuest": "Welcome to the CMP Dashboard!",
+    "overviewLoggedIn": "Here's a quick overview of your cloud management activities.",
+    "overviewLoggedOut": "Please log in to manage your cloud resources.",
+    "stats": {
+      "totalProjects": "Total Projects",
+      "activeEc2": "Active EC2 Instances",
+      "activeAzureVms": "Active Azure VMs",
+      "totalUsers": "Total Users"
+    },
+    "loadingStats": "Loading dashboard statistics...",
+    "errorLoadingStatsPrefix": "Could not load all dashboard statistics",
+    "errorLoadingDashboard": "Could not load dashboard data.",
+    "recentProjectsTitle": "Recent Projects",
+    "viewAllProjectsLink": "View All Projects",
+    "errorLoadingRecentProjects": "Could not load recent projects due to an error.",
+    "resourcesLabel": "Resources",
+    "viewDetailsLink": "View Details",
+    "noProjectsFound": "No projects found yet.",
+    "createOneLink": "Create one!"
+  },
+  "auditLogView": {
+    "title": "Audit Log",
+    "filtersTitle": "Filters",
+    "filterProjectIdLabel": "Project ID",
+    "filterProjectPlaceholder": "Optional Project UUID",
+    "filterUserIdLabel": "User ID",
+    "filterUserPlaceholder": "Optional User UUID",
+    "filterActionLabel": "Action",
+    "filterActionPlaceholder": "e.g., create_project, update_ec2",
+    "applyFiltersButton": "Apply Filters / Refresh",
+    "loadingEvents": "Loading audit events...",
+    "errorLoadingEvents": "Error loading audit events",
+    "tableHeaderTimestamp": "Timestamp",
+    "tableHeaderUserId": "User ID",
+    "tableHeaderAction": "Action",
+    "tableHeaderObjectType": "Object Type",
+    "tableHeaderObjectId": "Object ID",
+    "tableHeaderProjectId": "Project ID",
+    "tableHeaderDetails": "Details",
+    "noEventsFound": "No audit events found matching your criteria."
+  },
+  "azureVmManagement": {
+    "title": "Azure Virtual Machines",
+    "refreshingButton": "Refreshing...",
+    "addVmButton": "Add Azure VM",
+    "loadingVms": "Loading Azure VMs...",
+    "errorLoadingVms": "Error loading Azure VMs",
+    "noVmsFound": "No Azure VMs found for this project.",
+    "table": {
+      "nameCmp": "Name (CMP)",
+      "region": "Region",
+      "vmSize": "VM Size",
+      "publicIp": "Public IP",
+      "resourceGroup": "Resource Group"
+    },
+    "actions": {
+      "dashboard": "Dashboard",
+      "viewDashboardTitle": "View Integrated Dashboard",
+      "start": "Start",
+      "stop": "Stop",
+      "starting": "starting",
+      "stopping": "stopping"
+    },
+    "addModal": {
+      "title": "Add New Azure Virtual Machine",
+      "nameLabel": "Name (CMP Internal)",
+      "regionLabel": "Region",
+      "vmSizeLabel": "VM Size",
+      "adminUsernameLabel": "Admin Username",
+      "adminPasswordLabel": "Admin Password",
+      "imageReferenceLegend": "Image Reference (Ensure compatibility with Region/VM Size)",
+      "imagePublisherLabel": "Publisher",
+      "imageOfferLabel": "Offer",
+      "imageSkuLabel": "SKU",
+      "imageVersionLabel": "Version",
+      "advancedNetworkOptions": "Advanced Network Options",
+      "vnetPrefixLabel": "VNet Address Prefix (e.g., 10.0.0.0/16)",
+      "vnetPrefixPlaceholder": "Default: 10.0.0.0/16",
+      "subnetPrefixLabel": "Subnet Prefix (e.g., 10.0.1.0/24)",
+      "subnetPrefixPlaceholder": "Default: 10.0.1.0/24",
+      "publicIpAllocationLabel": "Public IP Allocation",
+      "ipAllocationDynamic": "Dynamic",
+      "ipAllocationStatic": "Static",
+      "addingButton": "Adding...",
+      "addVmButton": "Add VM",
+      "allFieldsRequiredError": "All required fields must be filled."
+    },
+    "editModal": {
+      "title": "Edit Azure VM: {name}",
+      "newVmSizeLabel": "New VM Size",
+      "currentSizeLabel": "Current size",
+      "newAdminPasswordLabel": "New Admin Password (optional)",
+      "passwordPlaceholder": "Leave blank to keep current",
+      "sizeChangeNote": "Note: Changing VM size may require the VM to be stopped/restarted by Azure.",
+      "vmSizeRequiredError": "VM Size is required."
+    },
+    "deleteModal": {
+      "title": "Delete Azure VM",
+      "confirmationText": "Are you sure you want to delete Azure VM <strong class=\"text-gray-800\">{name}</strong>? This action will attempt to deprovision it.",
+      "deleteButton": "Delete VM"
+    },
+    "dashboardModal": {
+      "title": "Azure VM Dashboard",
+      "loadingDashboard": "Loading dashboard...",
+      "urlNotAvailableError": "Dashboard URL is not available for VM {name}."
+    }
+  },
+  "ec2InstanceManagement": {
+    "title": "AWS EC2 Instances",
+    "refreshingButton": "Refreshing...",
+    "addInstanceButton": "Add EC2 Instance",
+    "loadingInstances": "Loading EC2 instances...",
+    "errorLoadingInstances": "Error loading EC2 instances",
+    "noInstancesFound": "No EC2 instances found for this project.",
+    "table": {
+      "nameCmp": "Name (CMP)",
+      "awsId": "AWS ID",
+      "region": "Region",
+      "type": "Type",
+      "ami": "AMI",
+      "publicIp": "Public IP",
+      "launchTime": "Launch Time"
+    },
+    "actions": {
+      "dashboard": "Dashboard",
+      "viewDashboardTitle": "View Integrated Dashboard",
+      "start": "Start",
+      "stop": "Stop",
+      "starting": "starting",
+      "stopping": "stopping"
+    },
+    "addModal": {
+      "title": "Add New EC2 Instance",
+      "nameLabel": "Name (CMP Internal)",
+      "regionLabel": "Region",
+      "instanceTypeLabel": "Instance Type",
+      "amiLabel": "AMI ID (e.g., ami-xxxxxxxxxxxxxxxxx)",
+      "amiNote": "Ensure AMI is compatible with selected region.",
+      "addingButton": "Adding...",
+      "addInstanceButton": "Add Instance",
+      "allFieldsRequiredError": "All fields are required for EC2 instance."
+    },
+    "editModal": {
+      "title": "Edit EC2 Instance: {name}",
+      "newInstanceTypeLabel": "New Instance Type",
+      "currentTypeLabel": "Current type",
+      "typeChangeNote": "Note: Changing instance type typically requires the instance to be stopped. The API will attempt the change.",
+      "instanceTypeRequiredError": "New instance type is required."
+    },
+    "deleteModal": {
+      "title": "Delete EC2 Instance",
+      "confirmationText": "Are you sure you want to delete EC2 instance <strong class=\"text-gray-800\">{name}</strong> (AWS ID: {awsId})? This action will attempt to deprovision it.",
+      "deleteButton": "Delete Instance"
+    },
+    "dashboardModal": {
+      "title": "EC2 Instance Dashboard",
+      "loadingDashboard": "Loading dashboard...",
+      "urlNotAvailableError": "Dashboard URL is not available for instance {name}."
+    }
+  },
+  "projectMemberManagement": {
+    "title": "Project Members",
+    "addMemberButton": "Add Member",
+    "loadingMembers": "Loading members...",
+    "errorLoadingMembers": "Error loading members",
+    "tableHeaderUserEmail": "User Email",
+    "tableHeaderUserId": "User ID",
+    "tableHeaderRole": "Role",
+    "removeButton": "Remove",
+    "noMembersFound": "No members found for this project.",
+    "unknownUser": "Unknown User",
+    "addModal": {
+      "title": "Add New Member",
+      "userLabel": "User",
+      "selectUserPlaceholder": "Select a user",
+      "roleLabel": "Role",
+      "addingButton": "Adding...",
+      "addMemberButtonText": "Add Member",
+      "userAndRoleRequiredError": "User and Role are required."
+    },
+    "editModal": {
+      "title": "Edit Member Role",
+      "editingRoleForLabel": "Editing role for: {user}",
+      "newRoleLabel": "New Role",
+      "roleIsRequiredError": "Role is required."
+    },
+    "deleteModal": {
+      "title": "Remove Project Member",
+      "confirmationText": "Are you sure you want to remove <strong class=\"text-gray-800\">{user}</strong> from this project?",
+      "removingButton": "Removing...",
+      "removeMemberButtonText": "Remove Member"
+    }
+  }
+}

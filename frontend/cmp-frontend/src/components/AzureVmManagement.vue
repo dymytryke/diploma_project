@@ -1,35 +1,35 @@
 <template>
   <div class="mt-10 pt-6 border-t">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-semibold text-gray-700">Azure Virtual Machines</h2>
+      <h2 class="text-2xl font-semibold text-gray-700">{{ $t('azureVmManagement.title') }}</h2>
       <div class="space-x-2">
         <button
           @click="handleRefreshAzureVms"
           :disabled="isLoadingAzureVms"
           class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-gray-300"
         >
-          <span v-if="isLoadingAzureVms && !isProcessingActionAzureVmId">Refreshing...</span>
-          <span v-else>Refresh List</span>
+          <span v-if="isLoadingAzureVms && !isProcessingActionAzureVmId">{{ $t('azureVmManagement.refreshingButton') }}</span>
+          <span v-else>{{ $t('common.refreshList') }}</span>
         </button>
         <button
           v-if="canManageAzureVms"
           @click="openAddAzureVmModal"
           class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
-          Add Azure VM
+          {{ $t('azureVmManagement.addVmButton') }}
         </button>
       </div>
     </div>
 
     <!-- Loading Azure VMs -->
     <div v-if="isLoadingAzureVms" class="text-center text-gray-500">
-      <p>Loading Azure VMs...</p>
+      <p>{{ $t('azureVmManagement.loadingVms') }}</p>
     </div>
     <!-- Error Loading Azure VMs -->
     <div v-else-if="azureVmsError" class="text-red-500 p-3 bg-red-100 rounded">
-      <p>Error loading Azure VMs: {{ azureVmsError.message || 'Unknown error' }}</p>
+      <p>{{ $t('azureVmManagement.errorLoadingVms') }}: {{ azureVmsError.message || $t('common.unknownError') }}</p>
       <p v-if="azureVmsError.response && azureVmsError.response.data && azureVmsError.response.data.detail">
-        Server: {{ typeof azureVmsError.response.data.detail === 'string' ? azureVmsError.response.data.detail : JSON.stringify(azureVmsError.response.data.detail) }}
+        {{ $t('common.serverErrorPrefix') }}: {{ typeof azureVmsError.response.data.detail === 'string' ? azureVmsError.response.data.detail : JSON.stringify(azureVmsError.response.data.detail) }}
       </p>
     </div>
     <!-- Azure VMs Table -->
@@ -37,37 +37,37 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name (CMP)</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VM Size</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Public IP</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource Group</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('azureVmManagement.table.nameCmp') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('azureVmManagement.table.region') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('azureVmManagement.table.vmSize') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('common.status') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('azureVmManagement.table.publicIp') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('azureVmManagement.table.resourceGroup') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="vm in azureVms" :key="vm.id">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.region }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.vm_size || 'N/A' }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.vm_size || $t('common.notAvailable') }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm">
               <span :class="getStatusClass(vm.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                 {{ vm.status }}
               </span>
-              <span v-if="isProcessingActionAzureVmId === vm.name" class="ml-2 text-xs text-gray-500">({{ azureVmActionInProgress }})</span>
+              <span v-if="isProcessingActionAzureVmId === vm.name" class="ml-2 text-xs text-gray-500">({{ $t(`azureVmManagement.actions.${azureVmActionInProgress}`) }})</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.public_ip || 'N/A' }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.resource_group || 'N/A' }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.public_ip || $t('common.notAvailable') }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ vm.resource_group || $t('common.notAvailable') }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
               <button
                 v-if="canViewDashboard(vm) && canManageAzureVms"
                 @click="openGrafanaDashboard(vm)"
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-blue-600 hover:text-blue-900 disabled:text-gray-400"
-                title="View Integrated Dashboard"
+                :title="$t('azureVmManagement.actions.viewDashboardTitle')"
               >
-                Dashboard
+                {{ $t('azureVmManagement.actions.dashboard') }}
               </button>
               <button
                 v-if="canEditVm(vm) && canManageAzureVms"
@@ -75,7 +75,7 @@
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-yellow-600 hover:text-yellow-900 disabled:text-gray-400"
               >
-                Edit
+                {{ $t('common.edit') }}
               </button>
               <button
                 v-if="canStartVm(vm) && canManageAzureVms"
@@ -83,7 +83,7 @@
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-green-600 hover:text-green-900 disabled:text-gray-400"
               >
-                Start
+                {{ $t('azureVmManagement.actions.start') }}
               </button>
               <button
                 v-if="canStopVm(vm) && canManageAzureVms"
@@ -91,7 +91,7 @@
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-orange-600 hover:text-orange-900 disabled:text-gray-400"
               >
-                Stop
+                {{ $t('azureVmManagement.actions.stop') }}
               </button>
               <button
                 v-if="canDeleteVm(vm) && canManageAzureVms"
@@ -99,7 +99,7 @@
                 :disabled="isProcessingActionAzureVmId === vm.name"
                 class="text-red-600 hover:text-red-900 disabled:text-gray-400"
               >
-                Delete
+                {{ $t('common.delete') }}
               </button>
             </td>
           </tr>
@@ -107,7 +107,7 @@
       </table>
     </div>
     <div v-else class="text-gray-500 text-center py-4">
-      <p>No Azure VMs found for this project.</p>
+      <p>{{ $t('azureVmManagement.noVmsFound') }}</p>
     </div>
 
     <!-- Add Azure VM Modal -->
@@ -116,90 +116,88 @@
            class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full">
         <div
           class="relative mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white"> 
-          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">Add New Azure Virtual Machine</h3>
+          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">{{ $t('azureVmManagement.addModal.title') }}</h3>
           <form @submit.prevent="submitAddAzureVm" class="space-y-4 max-h-[80vh] overflow-y-auto px-2">
             <div v-if="azureVmModalError" class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-              <p>{{ azureVmModalError.message || 'Could not process request.' }}</p>
+              <p>{{ azureVmModalError.message || $t('common.couldNotProcessRequest') }}</p>
               <p v-if="azureVmModalError.response && azureVmModalError.response.data && azureVmModalError.response.data.detail">
-                Server: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
+                {{ $t('common.serverErrorPrefix') }}: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
               </p>
             </div>
 
             <div>
-              <label for="azureVmName" class="block text-sm font-medium text-gray-700">Name (CMP Internal)</label>
+              <label for="azureVmName" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.addModal.nameLabel') }}</label>
               <input type="text" id="azureVmName" v-model="newAzureVm.name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             </div>
             <div>
-              <label for="azureVmRegion" class="block text-sm font-medium text-gray-700">Region</label>
+              <label for="azureVmRegion" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.addModal.regionLabel') }}</label>
               <select id="azureVmRegion" v-model="newAzureVm.region" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                 <option v-for="region in azureRegions" :key="region" :value="region">{{ region }}</option>
               </select>
             </div>
             <div>
-              <label for="azureVmSize" class="block text-sm font-medium text-gray-700">VM Size</label>
+              <label for="azureVmSize" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.addModal.vmSizeLabel') }}</label>
               <select id="azureVmSize" v-model="newAzureVm.vm_size" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                 <option v-for="size in azureVmSizes" :key="size" :value="size">{{ size }}</option>
               </select>
             </div>
             <div>
-              <label for="azureVmAdminUsername" class="block text-sm font-medium text-gray-700">Admin Username</label>
+              <label for="azureVmAdminUsername" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.addModal.adminUsernameLabel') }}</label>
               <input type="text" id="azureVmAdminUsername" v-model="newAzureVm.admin_username" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             </div>
             <div>
-              <label for="azureVmAdminPassword" class="block text-sm font-medium text-gray-700">Admin Password</label>
+              <label for="azureVmAdminPassword" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.addModal.adminPasswordLabel') }}</label>
               <input type="password" id="azureVmAdminPassword" v-model="newAzureVm.admin_password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             </div>
 
             <fieldset class="border p-4 rounded-md">
-              <legend class="text-sm font-medium text-gray-700 px-1">Image Reference (Ensure compatibility with Region/VM Size)</legend>
-              <!-- Image reference fields remain text for now due to complexity -->
+              <legend class="text-sm font-medium text-gray-700 px-1">{{ $t('azureVmManagement.addModal.imageReferenceLegend') }}</legend>
               <div class="space-y-3">
                 <div>
-                  <label for="azureVmImgPublisher" class="block text-xs font-medium text-gray-600">Publisher</label>
+                  <label for="azureVmImgPublisher" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.imagePublisherLabel') }}</label>
                   <input type="text" id="azureVmImgPublisher" v-model="newAzureVm.image_reference.publisher" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                 </div>
                 <div>
-                  <label for="azureVmImgOffer" class="block text-xs font-medium text-gray-600">Offer</label>
+                  <label for="azureVmImgOffer" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.imageOfferLabel') }}</label>
                   <input type="text" id="azureVmImgOffer" v-model="newAzureVm.image_reference.offer" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                 </div>
                 <div>
-                  <label for="azureVmImgSku" class="block text-xs font-medium text-gray-600">SKU</label>
+                  <label for="azureVmImgSku" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.imageSkuLabel') }}</label>
                   <input type="text" id="azureVmImgSku" v-model="newAzureVm.image_reference.sku" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                 </div>
                 <div>
-                  <label for="azureVmImgVersion" class="block text-xs font-medium text-gray-600">Version</label>
+                  <label for="azureVmImgVersion" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.imageVersionLabel') }}</label>
                   <input type="text" id="azureVmImgVersion" v-model="newAzureVm.image_reference.version" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                 </div>
               </div>
             </fieldset>
             
             <details class="border p-2 rounded-md">
-                <summary class="text-sm font-medium text-gray-700 cursor-pointer">Advanced Network Options</summary>
+                <summary class="text-sm font-medium text-gray-700 cursor-pointer">{{ $t('azureVmManagement.addModal.advancedNetworkOptions') }}</summary>
                 <div class="mt-2 space-y-3 p-2">
                     <div>
-                        <label for="azureVmVnetPrefix" class="block text-xs font-medium text-gray-600">VNet Address Prefix (e.g., 10.0.0.0/16)</label>
-                        <input type="text" id="azureVmVnetPrefix" v-model="newAzureVm.vnet_address_prefix" placeholder="Default: 10.0.0.0/16" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
+                        <label for="azureVmVnetPrefix" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.vnetPrefixLabel') }}</label>
+                        <input type="text" id="azureVmVnetPrefix" v-model="newAzureVm.vnet_address_prefix" :placeholder="$t('azureVmManagement.addModal.vnetPrefixPlaceholder')" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                     </div>
                     <div>
-                        <label for="azureVmSubnetPrefix" class="block text-xs font-medium text-gray-600">Subnet Prefix (e.g., 10.0.1.0/24)</label>
-                        <input type="text" id="azureVmSubnetPrefix" v-model="newAzureVm.subnet_prefix" placeholder="Default: 10.0.1.0/24" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
+                        <label for="azureVmSubnetPrefix" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.subnetPrefixLabel') }}</label>
+                        <input type="text" id="azureVmSubnetPrefix" v-model="newAzureVm.subnet_prefix" :placeholder="$t('azureVmManagement.addModal.subnetPrefixPlaceholder')" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
                     </div>
                     <div>
-                        <label for="azureVmPublicIpAlloc" class="block text-xs font-medium text-gray-600">Public IP Allocation</label>
+                        <label for="azureVmPublicIpAlloc" class="block text-xs font-medium text-gray-600">{{ $t('azureVmManagement.addModal.publicIpAllocationLabel') }}</label>
                         <select id="azureVmPublicIpAlloc" v-model="newAzureVm.public_ip_allocation_method" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs">
-                            <option value="Dynamic">Dynamic</option>
-                            <option value="Static">Static</option>
+                            <option value="Dynamic">{{ $t('azureVmManagement.addModal.ipAllocationDynamic') }}</option>
+                            <option value="Static">{{ $t('azureVmManagement.addModal.ipAllocationStatic') }}</option>
                         </select>
                     </div>
                 </div>
             </details>
 
-
             <div class="flex justify-end space-x-3 pt-4">
-              <button type="button" @click="closeAddAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+              <button type="button" @click="closeAddAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">{{ $t('common.cancel') }}</button>
               <button type="submit" :disabled="isProcessingAzureVm" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:bg-purple-300">
-                <span v-if="isProcessingAzureVm">Adding...</span>
-                <span v-else>Add VM</span>
+                <span v-if="isProcessingAzureVm">{{ $t('azureVmManagement.addModal.addingButton') }}</span>
+                <span v-else>{{ $t('azureVmManagement.addModal.addVmButton') }}</span>
               </button>
             </div>
           </form>
@@ -213,31 +211,31 @@
            class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full"> 
         <div
           class="relative mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white"> 
-          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">Edit Azure VM: {{ editingAzureVm?.name }}</h3>
+          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center mb-4">{{ $t('azureVmManagement.editModal.title', { name: editingAzureVm?.name }) }}</h3>
           <form @submit.prevent="submitEditAzureVm" class="space-y-4">
             <div v-if="azureVmModalError" class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-              <p>{{ azureVmModalError.message || 'Could not process request.' }}</p>
+              <p>{{ azureVmModalError.message || $t('common.couldNotProcessRequest') }}</p>
               <p v-if="azureVmModalError.response && azureVmModalError.response.data && azureVmModalError.response.data.detail">
-                Server: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
+                {{ $t('common.serverErrorPrefix') }}: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
               </p>
             </div>
             <div>
-              <label for="editAzureVmSize" class="block text-sm font-medium text-gray-700">New VM Size</label>
+              <label for="editAzureVmSize" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.editModal.newVmSizeLabel') }}</label>
               <select id="editAzureVmSize" v-model="editingAzureVm.vm_size" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                 <option v-for="size in azureVmSizes" :key="size" :value="size">{{ size }}</option>
               </select>
-              <p class="mt-1 text-xs text-gray-500">Current size: {{ originalEditingAzureVmSize }}</p>
+              <p class="mt-1 text-xs text-gray-500">{{ $t('azureVmManagement.editModal.currentSizeLabel') }}: {{ originalEditingAzureVmSize }}</p>
             </div>
             <div>
-              <label for="editAzureVmAdminPassword" class="block text-sm font-medium text-gray-700">New Admin Password (optional)</label>
-              <input type="password" id="editAzureVmAdminPassword" v-model="editingAzureVm.admin_password" placeholder="Leave blank to keep current" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              <label for="editAzureVmAdminPassword" class="block text-sm font-medium text-gray-700">{{ $t('azureVmManagement.editModal.newAdminPasswordLabel') }}</label>
+              <input type="password" id="editAzureVmAdminPassword" v-model="editingAzureVm.admin_password" :placeholder="$t('azureVmManagement.editModal.passwordPlaceholder')" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             </div>
-            <p class="text-sm text-gray-600">Note: Changing VM size may require the VM to be stopped/restarted by Azure.</p>
+            <p class="text-sm text-gray-600">{{ $t('azureVmManagement.editModal.sizeChangeNote') }}</p>
             <div class="flex justify-end space-x-3 pt-4">
-              <button type="button" @click="closeEditAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+              <button type="button" @click="closeEditAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">{{ $t('common.cancel') }}</button>
               <button type="submit" :disabled="isProcessingAzureVm" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-yellow-300">
-                <span v-if="isProcessingAzureVm">Saving...</span>
-                <span v-else>Save Changes</span>
+                <span v-if="isProcessingAzureVm">{{ $t('common.saving') }}</span>
+                <span v-else>{{ $t('common.saveChanges') }}</span>
               </button>
             </div>
           </form>
@@ -251,23 +249,21 @@
            class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto w-full h-full"> 
         <div
           class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white"> 
-          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center">Delete Azure VM</h3>
+          <h3 class="text-lg font-medium leading-6 text-gray-900 text-center">{{ $t('azureVmManagement.deleteModal.title') }}</h3>
           <div class="mt-2 px-7 py-3">
-            <p class="text-sm text-gray-600">
-              Are you sure you want to delete Azure VM <strong class="text-gray-800">{{ azureVmToDelete?.name }}</strong>? This action will attempt to deprovision it.
-            </p>
+            <p class="text-sm text-gray-600" v-html="$t('azureVmManagement.deleteModal.confirmationText', { name: azureVmToDelete?.name })"></p>
             <div v-if="azureVmModalError" class="mt-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                <p>{{ azureVmModalError.message || 'Could not process request.' }}</p>
+                <p>{{ azureVmModalError.message || $t('common.couldNotProcessRequest') }}</p>
                  <p v-if="azureVmModalError.response && azureVmModalError.response.data && azureVmModalError.response.data.detail">
-                  Server: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
+                  {{ $t('common.serverErrorPrefix') }}: {{ typeof azureVmModalError.response.data.detail === 'string' ? azureVmModalError.response.data.detail : JSON.stringify(azureVmModalError.response.data.detail) }}
                 </p>
               </div>
           </div>
           <div class="items-center px-4 py-3 space-x-4 flex justify-end">
-            <button type="button" @click="closeDeleteAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+            <button type="button" @click="closeDeleteAzureVmModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">{{ $t('common.cancel') }}</button>
             <button @click="submitDeleteAzureVm" :disabled="isProcessingAzureVm" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400">
-              <span v-if="isProcessingAzureVm">Deleting...</span>
-              <span v-else>Delete VM</span>
+              <span v-if="isProcessingAzureVm">{{ $t('common.deleting') }}</span>
+              <span v-else>{{ $t('azureVmManagement.deleteModal.deleteButton') }}</span>
             </button>
           </div>
         </div>
@@ -280,7 +276,7 @@
            class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
         <div class="relative bg-white rounded-lg shadow-xl w-full h-[90vh] max-w-6xl flex flex-col">
           <div class="flex justify-between items-center p-4 border-b">
-            <h3 class="text-lg font-medium text-gray-900">Azure VM Dashboard</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ $t('azureVmManagement.dashboardModal.title') }}</h3>
             <button @click="closeDashboardModalAzure" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -294,7 +290,7 @@
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             ></iframe>
             <div v-else class="flex items-center justify-center h-full text-gray-500">
-              Loading dashboard...
+              {{ $t('azureVmManagement.dashboardModal.loadingDashboard') }}
             </div>
           </div>
         </div>
@@ -307,6 +303,9 @@
 <script setup>
 import { ref, onMounted, watch, reactive } from 'vue';
 import apiService from '@/services/api';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   projectId: {
@@ -348,8 +347,8 @@ const isProcessingAzureVm = ref(false); // Shared processing state for Azure VM 
 const showAddAzureVmModal = ref(false);
 const initialNewAzureVmState = () => ({
   name: '',
-  region: azureRegions.value[0] || '', // Default to the first region
-  vm_size: azureVmSizes.value[0] || '', // Default to the first VM size
+  region: azureRegions.value[0] || '', 
+  vm_size: azureVmSizes.value[0] || '', 
   image_reference: {
     publisher: 'Canonical',
     offer: '0001-com-ubuntu-server-jammy',
@@ -358,8 +357,8 @@ const initialNewAzureVmState = () => ({
   },
   admin_username: 'azureuser',
   admin_password: '',
-  vnet_address_prefix: '', // Default will be handled by backend if empty
-  subnet_prefix: '',       // Default will be handled by backend if empty
+  vnet_address_prefix: '', 
+  subnet_prefix: '',       
   public_ip_allocation_method: 'Dynamic'
 });
 const newAzureVm = reactive(initialNewAzureVmState());
@@ -374,9 +373,8 @@ const showDeleteAzureVmModal = ref(false);
 const azureVmToDelete = ref(null);
 
 // --- Action State (Start/Stop) ---
-const isProcessingActionAzureVmId = ref(null); // Stores the name of the VM being acted upon
-const azureVmActionInProgress = ref(''); // e.g., 'starting', 'stopping'
-// const azureVmActionError = ref(null); // For errors specific to start/stop actions (can use azureVmModalError if preferred)
+const isProcessingActionAzureVmId = ref(null); 
+const azureVmActionInProgress = ref(''); 
 
 // --- Integrated Dashboard Modal State ---
 const showDashboardModalAzure = ref(false);
@@ -404,7 +402,7 @@ async function handleRefreshAzureVms() {
 
 // --- Add Azure VM Functions ---
 function openAddAzureVmModal() {
-  Object.assign(newAzureVm, initialNewAzureVmState()); // Reset form
+  Object.assign(newAzureVm, initialNewAzureVmState()); 
   azureVmModalError.value = null;
   showAddAzureVmModal.value = true;
 }
@@ -414,16 +412,14 @@ function closeAddAzureVmModal() {
 }
 
 async function submitAddAzureVm() {
-  // Basic validation (can be expanded)
   if (!newAzureVm.name || !newAzureVm.region || !newAzureVm.vm_size || !newAzureVm.admin_username || !newAzureVm.admin_password ||
       !newAzureVm.image_reference.publisher || !newAzureVm.image_reference.offer || !newAzureVm.image_reference.sku || !newAzureVm.image_reference.version) {
-    azureVmModalError.value = { message: 'All required fields must be filled.' };
+    azureVmModalError.value = { message: t('azureVmManagement.addModal.allFieldsRequiredError') };
     return;
   }
   isProcessingAzureVm.value = true;
   azureVmModalError.value = null;
 
-  // Filter out empty optional fields so backend defaults are used
   const payload = { ...newAzureVm };
   if (!payload.vnet_address_prefix) delete payload.vnet_address_prefix;
   if (!payload.subnet_prefix) delete payload.subnet_prefix;
@@ -443,12 +439,11 @@ async function submitAddAzureVm() {
 // --- Edit Azure VM Functions ---
 function openEditAzureVmModal(vm) {
   editingAzureVm.value = {
-    name: vm.name, // name is not editable via API, but needed for URL
-    // Ensure vm_size is a value present in our predefined list, or handle it
+    name: vm.name, 
     vm_size: azureVmSizes.value.includes(vm.vm_size) ? vm.vm_size : (azureVmSizes.value[0] || ''),
     admin_password: '' 
   };
-  originalEditingAzureVmSize.value = vm.vm_size || 'N/A';
+  originalEditingAzureVmSize.value = vm.vm_size || t('common.notAvailable');
   azureVmModalError.value = null;
   showEditAzureVmModal.value = true;
 }
@@ -460,7 +455,7 @@ function closeEditAzureVmModal() {
 
 async function submitEditAzureVm() {
   if (!editingAzureVm.value || !editingAzureVm.value.vm_size) {
-     azureVmModalError.value = { message: 'VM Size is required.' };
+     azureVmModalError.value = { message: t('azureVmManagement.editModal.vmSizeRequiredError') };
      return;
   }
   isProcessingAzureVm.value = true;
@@ -469,7 +464,7 @@ async function submitEditAzureVm() {
   const payload = {
     vm_size: editingAzureVm.value.vm_size
   };
-  if (editingAzureVm.value.admin_password) { // Only include password if user entered one
+  if (editingAzureVm.value.admin_password) { 
     payload.admin_password = editingAzureVm.value.admin_password;
   }
 
@@ -487,11 +482,9 @@ async function submitEditAzureVm() {
 
 // --- Delete Azure VM Functions ---
 function openDeleteAzureVmModal(vm) {
-  console.log('openDeleteAzureVmModal called with vm:', vm); // DEBUG LINE
   azureVmToDelete.value = { ...vm };
   azureVmModalError.value = null;
   showDeleteAzureVmModal.value = true;
-  console.log('showDeleteAzureVmModal value after setting true:', showDeleteAzureVmModal.value); // DEBUG LINE
 }
 
 function closeDeleteAzureVmModal() {
@@ -515,9 +508,6 @@ async function submitDeleteAzureVm() {
   }
 }
 
-// --- Azure VM Action Functions (Start/Stop/Delete/Edit Conditions) ---
-// These are based on Azure VM states. You might need to adjust based on the exact string values of ResourceState enum.
-// Common states: Succeeded, Failed, Canceled, Creating, Updating, Deleting, Starting, Stopping, Stopped, Deallocated, Terminated
 function canViewDashboard(vm) {
   const status = vm.status ? vm.status.toLowerCase() : '';
   return !!vm.dashboard_url && 
@@ -535,26 +525,21 @@ function canEditVm(vm) {
 
 function canStartVm(vm) {
   const status = vm.status ? vm.status.toLowerCase() : '';
-  // A terminated VM cannot be started. Only stopped or deallocated ones.
   return (status === 'stopped' || status === 'deallocated') && !status.includes('terminated');
 }
 
-function canStopVm(vm) { // Stop usually means deallocate for cost savings
+function canStopVm(vm) { 
   const status = vm.status ? vm.status.toLowerCase() : '';
-  // A terminated VM cannot be stopped.
   return (status === 'running' || status === 'starting') && !status.includes('terminated');
 }
 
 function canDeleteVm(vm) {
   const status = vm.status ? vm.status.toLowerCase() : '';
-  // If a VM is already terminated, deleting it again might be redundant or not allowed.
-  // If 'deleting' is a transient state before 'terminated', this is fine.
   return !status.includes('deleting') && 
          !status.includes('creating') &&
          !status.includes('terminated');
 }
 
-// --- Start/Stop Actions ---
 async function startAzureVm(vm) {
   if (!vm || !vm.name) return;
   isProcessingActionAzureVmId.value = vm.name;
@@ -562,10 +547,10 @@ async function startAzureVm(vm) {
   azureVmModalError.value = null; 
   try {
     await apiService.post(`/resources/azure/vm/${props.projectId}/${vm.name}/start`);
-    await fetchAzureVms(); // Or update single item if API returns updated VM
+    await fetchAzureVms(); 
   } catch (err) {
     console.error(`Failed to start Azure VM ${vm.name}:`, err);
-    azureVmModalError.value = err.response?.data || err; // Show error in a general modal error spot or a dedicated one
+    azureVmModalError.value = err.response?.data || err; 
   } finally {
     isProcessingActionAzureVmId.value = null;
     azureVmActionInProgress.value = '';
@@ -591,34 +576,32 @@ async function stopAzureVm(vm) {
 
 function getStatusClass(status) {
   status = status ? status.toLowerCase() : '';
-  // Adjust based on your ResourceState enum values and desired colors
-  if (status.includes('running') || status.includes('succeeded')) { // 'Succeeded' can be a final state for some operations
+  if (status.includes('running') || status.includes('succeeded')) { 
     return 'bg-green-100 text-green-800';
   } else if (status.includes('pending') || status.includes('provisioning') || status.includes('creating') || status.includes('starting') || status.includes('stopping') || status.includes('updating')) {
     return 'bg-yellow-100 text-yellow-800';
-  } else if (status.includes('stopped') || status.includes('deallocated') || status.includes('terminated')) { // 'VM deallocated' is common for stopped Azure VMs
+  } else if (status.includes('stopped') || status.includes('deallocated') || status.includes('terminated')) { 
     return 'bg-gray-100 text-gray-800';
   } else if (status.includes('error') || status.includes('failed') || status.includes('canceled')) {
     return 'bg-red-100 text-red-800';
   }
-  return 'bg-blue-100 text-blue-800'; // Default for unknown or other transient states
+  return 'bg-blue-100 text-blue-800'; 
 }
 
 function openGrafanaDashboard(vm) { 
   const url = vm.dashboard_url;
-  console.log('Attempting to open Azure VM integrated Grafana dashboard. VM:', vm, 'URL:', url);
   if (url) {
     dashboardModalUrlAzure.value = url;
     showDashboardModalAzure.value = true;
   } else {
     console.warn('Grafana dashboard URL not found for this Azure VM:', vm.name);
-    azureVmModalError.value = { message: `Dashboard URL is not available for VM ${vm.name}.` };
+    azureVmModalError.value = { message: t('azureVmManagement.dashboardModal.urlNotAvailableError', { name: vm.name }) };
   }
 }
 
 function closeDashboardModalAzure() {
   showDashboardModalAzure.value = false;
-  dashboardModalUrlAzure.value = ''; // Clear URL
+  dashboardModalUrlAzure.value = ''; 
 }
 
 onMounted(() => {

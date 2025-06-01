@@ -1,17 +1,17 @@
 <template>
   <div class="p-4 sm:p-6">
-    <h1 class="text-2xl font-semibold text-gray-800 mb-6">User Management</h1>
+    <h1 class="text-2xl font-semibold text-gray-800 mb-6">{{ $t('usersView.title') }}</h1>
 
     <!-- Loading State -->
     <div v-if="isLoadingUsers" class="text-center text-gray-500 mt-10">
-      <p>Loading users...</p>
+      <p>{{ $t('usersView.loadingUsers') }}</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="usersError" class="text-center text-red-500 mt-10 p-4 bg-red-100 rounded">
-      <p>Error loading users: {{ usersError.message || 'Unknown error' }}</p>
+      <p>{{ $t('usersView.errorLoadingUsers') }}: {{ usersError.message || $t('common.unknownError') }}</p>
       <p v-if="usersError.response && usersError.response.data && usersError.response.data.detail">
-        Server says: {{ typeof usersError.response.data.detail === 'string' ? usersError.response.data.detail : JSON.stringify(usersError.response.data.detail) }}
+        {{ $t('common.serverErrorPrefix') }}: {{ typeof usersError.response.data.detail === 'string' ? usersError.response.data.detail : JSON.stringify(usersError.response.data.detail) }}
       </p>
     </div>
 
@@ -20,17 +20,17 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('common.email') }}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('common.role') }}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('usersView.userId') }}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('usersView.createdAt') }}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="user in users" :key="user.id">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.email }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role_id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $t(`roles.${user.role_id}`) }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.id }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ new Date(user.created_at).toLocaleString() }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -38,17 +38,17 @@
                 @click="openEditUserRoleModal(user)"
                 :disabled="user.id === authStore.currentUser?.id && user.role_id === 'admin'"
                 class="text-yellow-600 hover:text-yellow-900 disabled:text-gray-400 disabled:cursor-not-allowed"
-                title="Edit Role"
+                :title="$t('usersView.editRoleTitle')"
               >
-                Edit Role
+                {{ $t('usersView.editRoleButton') }}
               </button>
               <button
                 @click="openDeleteUserModal(user)"
                 :disabled="user.id === authStore.currentUser?.id"
                 class="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed"
-                title="Delete User"
+                :title="$t('usersView.deleteUserTitle')"
               >
-                Delete
+                {{ $t('common.delete') }}
               </button>
             </td>
           </tr>
@@ -56,44 +56,44 @@
       </table>
     </div>
     <div v-else class="text-center text-gray-500 mt-10">
-      <p>No users found.</p>
+      <p>{{ $t('usersView.noUsersFound') }}</p>
     </div>
 
     <!-- Edit User Role Modal -->
     <Teleport to="body">
       <div v-if="showEditRoleModal"
-           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"> {/* Changed */}
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Edit User Role</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ $t('usersView.editUserRoleModalTitle') }}</h3>
             <form @submit.prevent="submitEditUserRole" class="mt-2 px-7 py-3">
               <div v-if="modalError" class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                <p>{{ modalError.message || 'Could not process request.' }}</p>
+                <p>{{ modalError.message || $t('common.couldNotProcessRequest') }}</p>
                 <p v-if="modalError.response && modalError.response.data && modalError.response.data.detail">
-                  Server: {{ typeof modalError.response.data.detail === 'string' ? modalError.response.data.detail : JSON.stringify(modalError.response.data.detail) }}
+                  {{ $t('common.serverErrorPrefix') }}: {{ typeof modalError.response.data.detail === 'string' ? modalError.response.data.detail : JSON.stringify(modalError.response.data.detail) }}
                 </p>
               </div>
               <div class="mb-4 text-left">
-                <p class="text-sm text-gray-600">User: <strong class="text-gray-800">{{ userToEdit?.email }}</strong></p>
+                <p class="text-sm text-gray-600">{{ $t('usersView.userLabel') }}: <strong class="text-gray-800">{{ userToEdit?.email }}</strong></p>
               </div>
               <div class="mb-4">
-                <label for="userRole" class="block text-sm font-medium text-gray-700 text-left">Role</label>
+                <label for="userRole" class="block text-sm font-medium text-gray-700 text-left">{{ $t('common.role') }}</label>
                 <select
                   id="userRole"
                   v-model="userToEdit.role_id"
                   required
                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
-                  <option value="viewer">Viewer</option>
-                  <option value="devops">DevOps</option>
-                  <option value="admin">Admin</option>
+                  <option value="viewer">{{ $t('roles.viewer') }}</option>
+                  <option value="devops">{{ $t('roles.devops') }}</option>
+                  <option value="admin">{{ $t('roles.admin') }}</option>
                 </select>
               </div>
               <div class="items-center px-4 py-3 space-x-4 flex justify-end">
-                <button type="button" @click="closeEditUserRoleModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                <button type="button" @click="closeEditUserRoleModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">{{ $t('common.cancel') }}</button>
                 <button type="submit" :disabled="isProcessing" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-yellow-300">
-                  <span v-if="isProcessing">Saving...</span>
-                  <span v-else>Save Role</span>
+                  <span v-if="isProcessing">{{ $t('common.saving') }}</span>
+                  <span v-else>{{ $t('usersView.saveRoleButton') }}</span>
                 </button>
               </div>
             </form>
@@ -105,26 +105,26 @@
     <!-- Delete User Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteUserConfirmModal"
-           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4"> {/* Changed */}
+           class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Delete User</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ $t('usersView.deleteUserModalTitle') }}</h3>
             <div class="mt-2 px-7 py-3">
               <p class="text-sm text-gray-600">
-                Are you sure you want to delete user <strong class="text-gray-800">{{ userToDelete?.email }}</strong>? This action cannot be undone.
+                {{ $t('usersView.deleteUserConfirmation', { email: userToDelete?.email }) }}
               </p>
               <div v-if="modalError" class="mt-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                <p>{{ modalError.message || 'Could not process request.' }}</p>
+                <p>{{ modalError.message || $t('common.couldNotProcessRequest') }}</p>
                  <p v-if="modalError.response && modalError.response.data && modalError.response.data.detail">
-                  Server: {{ typeof modalError.response.data.detail === 'string' ? modalError.response.data.detail : JSON.stringify(modalError.response.data.detail) }}
+                  {{ $t('common.serverErrorPrefix') }}: {{ typeof modalError.response.data.detail === 'string' ? modalError.response.data.detail : JSON.stringify(modalError.response.data.detail) }}
                 </p>
               </div>
             </div>
             <div class="items-center px-4 py-3 space-x-4 flex justify-end">
-              <button type="button" @click="closeDeleteUserModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+              <button type="button" @click="closeDeleteUserModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">{{ $t('common.cancel') }}</button>
               <button @click="submitDeleteUser" :disabled="isProcessing" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400">
-                <span v-if="isProcessing">Deleting...</span>
-                <span v-else>Delete User</span>
+                <span v-if="isProcessing">{{ $t('common.deleting') }}</span>
+                <span v-else>{{ $t('usersView.deleteUserButton') }}</span>
               </button>
             </div>
           </div>
@@ -135,9 +135,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // Import computed
 import apiService from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import { useI18n } from 'vue-i18n'; // Import useI18n
+
+const { t } = useI18n(); // Initialize t function
 
 const authStore = useAuthStore();
 
@@ -154,7 +157,7 @@ const userToDelete = ref(null);
 const modalError = ref(null);
 const isProcessing = ref(false);
 
-const globalRoles = ['viewer', 'devops', 'admin'];
+// const globalRoles = ['viewer', 'devops', 'admin']; // Not directly used in template, roles are hardcoded in select
 
 async function fetchUsers() {
   isLoadingUsers.value = true;
@@ -186,7 +189,7 @@ function closeEditUserRoleModal() {
 
 async function submitEditUserRole() {
   if (!userToEdit.value || !userToEdit.value.role_id) {
-    modalError.value = { message: 'Role is required.' };
+    modalError.value = { message: t('usersView.roleIsRequiredError') }; // Localized error
     return;
   }
   isProcessing.value = true;
