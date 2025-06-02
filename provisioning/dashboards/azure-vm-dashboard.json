@@ -1,0 +1,849 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "azuremonitor",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "%",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "metricName": "Percentage CPU",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "{{resourcegroup}} - {{resourcename}}",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "CPU Percentage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "azuremonitor",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "metricName": "Available Memory Bytes",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "{{resourcegroup}} - {{resourcename}}",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "Available Memory Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "azuremonitor",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "iops",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "metricName": "OS Disk Read Operations/Sec",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "Read Ops/Sec",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "OS Disk Read Operations/Sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "azuremonitor",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "iops",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "metricName": "OS Disk Write Operations/Sec",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "Write Ops/Sec",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "OS Disk Write Operations/Sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-azure-monitor-datasource",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Total",
+            "allowedTimeGrainsMs": [
+              60000,
+              300000,
+              900000,
+              1800000,
+              3600000,
+              21600000,
+              43200000,
+              86400000
+            ],
+            "dimensionFilters": [],
+            "metricName": "Network In",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "Network In",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "Network In Total",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-azure-monitor-datasource",
+        "uid": "azuremonitor"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Total",
+            "allowedTimeGrainsMs": [
+              60000,
+              300000,
+              900000,
+              1800000,
+              3600000,
+              21600000,
+              43200000,
+              86400000
+            ],
+            "dimensionFilters": [],
+            "metricName": "Network Out",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "region": "$region",
+            "resources": [
+              {
+                "metricNamespace": "microsoft.compute/virtualmachines",
+                "region": "$region",
+                "resourceGroup": "$resourceGroup",
+                "resourceName": "$vmName",
+                "subscription": "$subscription"
+              }
+            ],
+            "timeGrain": "auto",
+            "top": "10"
+          },
+          "datasource": {
+            "type": "azuremonitor",
+            "uid": "azuremonitor"
+          },
+          "legendFormat": "Network Out",
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "$subscription"
+        }
+      ],
+      "title": "Network Out Total",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "azure",
+    "vm"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "Azure subscription 1",
+          "value": "ea537527-e0b8-4d46-9262-b2258321e9d1"
+        },
+        "datasource": {
+          "type": "azuremonitor",
+          "uid": "azuremonitor"
+        },
+        "definition": "Subscriptions()",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Subscription",
+        "multi": false,
+        "name": "subscription",
+        "options": [],
+        "query": "Subscriptions()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "my-test-vm-rg",
+          "value": "my-test-vm-rg"
+        },
+        "datasource": {
+          "type": "azuremonitor",
+          "uid": "azuremonitor"
+        },
+        "definition": "ResourceGroups($subscription)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Resource Group",
+        "multi": false,
+        "name": "resourceGroup",
+        "options": [],
+        "query": "ResourceGroups($subscription)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "my-test-vmf500e88d",
+          "value": "my-test-vmf500e88d"
+        },
+        "datasource": {
+          "type": "azuremonitor",
+          "uid": "azuremonitor"
+        },
+        "definition": "Resources($subscription, $resourceGroup, 'microsoft.compute/virtualmachines', $region)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "VM Name",
+        "multi": false,
+        "name": "vmName",
+        "options": [],
+        "query": {
+          "namespace": "microsoft.compute/virtualmachines",
+          "queryType": "Azure Resource Names",
+          "region": "$region",
+          "resourceGroup": "$resourceGroup",
+          "subscription": "$subscription"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "West Europe",
+          "value": "westeurope"
+        },
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azuremonitor"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Region",
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": {
+          "azureLogAnalytics": {
+            "query": "",
+            "resources": []
+          },
+          "queryType": "Azure Regions",
+          "refId": "A",
+          "subscription": "$subscription"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Azure VM golden",
+  "uid": "azure-vm-golden",
+  "version": 5,
+  "weekStart": ""
+}

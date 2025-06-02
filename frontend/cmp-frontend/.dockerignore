@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Node modules
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# NPM debug log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files - these should be handled by Docker build args or runtime env vars
+.env
+.env.*
+!.env.example
+
+# Test results and coverage
+coverage
+.nyc_output
+
+# Optional: Local development specific files
+# For example, if you have local config overrides not meant for production
+# local.config.js
+
+# OS generated files
+.DS_Store
+Thumbs.db
